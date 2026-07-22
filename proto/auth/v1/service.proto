@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package authn.v1;
+
+import "auth/v1/messages.proto";
+
+option go_package = "github.com/bigelle/authn/gen/go/v1;authnv1";
+
+service AuthService {
+  rpc Login(LoginRequest) returns (LoginResponse);
+}

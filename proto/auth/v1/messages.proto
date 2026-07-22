@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package authn.v1;
+
+import "buf/validate/validate.proto";
+
+option go_package = "github.com/bigelle/authn/gen/go/v1;authnv1";
+
+// TODO: add validation using validate.proto
+message LoginRequest {
+  oneof credential {
+    string username = 1;
+    string email = 2;
+  }
+  string password = 3;
+  string challenge = 4;
+}
+
+message LoginResponse {
+  optional string auth_code = 1;
+}
