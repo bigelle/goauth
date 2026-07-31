@@ -4,7 +4,7 @@
 // 	protoc        (unknown)
 // source: auth/v1/service.proto
 
-package authnv1
+package authv1
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -24,17 +24,17 @@ var File_auth_v1_service_proto protoreflect.FileDescriptor
 
 const file_auth_v1_service_proto_rawDesc = "" +
 	"\n" +
-	"\x15auth/v1/service.proto\x12\bauthn.v1\x1a\x16auth/v1/messages.proto2G\n" +
-	"\vAuthService\x128\n" +
-	"\x05Login\x12\x16.authn.v1.LoginRequest\x1a\x17.authn.v1.LoginResponseB,Z*github.com/bigelle/authn/gen/go/v1;authnv1b\x06proto3"
+	"\x15auth/v1/service.proto\x12\aauth.v1\x1a\x16auth/v1/messages.proto2E\n" +
+	"\vAuthService\x126\n" +
+	"\x05Login\x12\x15.auth.v1.LoginRequest\x1a\x16.auth.v1.LoginResponseB*Z(github.com/bigelle/auth/gen/go/v1;authv1b\x06proto3"
 
 var file_auth_v1_service_proto_goTypes = []any{
-	(*LoginRequest)(nil),  // 0: authn.v1.LoginRequest
-	(*LoginResponse)(nil), // 1: authn.v1.LoginResponse
+	(*LoginRequest)(nil),  // 0: auth.v1.LoginRequest
+	(*LoginResponse)(nil), // 1: auth.v1.LoginResponse
 }
 var file_auth_v1_service_proto_depIdxs = []int32{
-	0, // 0: authn.v1.AuthService.Login:input_type -> authn.v1.LoginRequest
-	1, // 1: authn.v1.AuthService.Login:output_type -> authn.v1.LoginResponse
+	0, // 0: auth.v1.AuthService.Login:input_type -> auth.v1.LoginRequest
+	1, // 1: auth.v1.AuthService.Login:output_type -> auth.v1.LoginResponse
 	1, // [1:2] is the sub-list for method output_type
 	0, // [0:1] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name

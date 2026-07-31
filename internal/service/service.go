@@ -2,33 +2,71 @@ package service
 
 import (
 	"context"
+	"errors"
+	"time"
 
-	authnv1 "github.com/bigelle/authn/gen/auth/v1"
+	authv1 "github.com/bigelle/auth/gen/auth/v1"
+	"github.com/bigelle/auth/internal/cache"
+	"github.com/bigelle/auth/internal/crypt"
+	"github.com/bigelle/auth/internal/db"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 type AuthService struct {
-	authnv1.UnimplementedAuthServiceServer
+	authv1.UnimplementedAuthServiceServer
+	cache cache.Cache
+	db    db.Database
 }
 
-func (s *AuthService) Login(ctx context.Context, req *authnv1.LoginRequest) (*authnv1.LoginResponse, error) {
+func (s *AuthService) Login(c context.Context, req *authv1.LoginRequest) (*authv1.LoginResponse, error) {
+	// 1. get user by email or username
+	var (
+		user *db.User
+		err  error
+	)
+
+	ctx, cancel := context.WithTimeout(c, 30*time.Second)
+	defer cancel()
+
 	switch req.Credential.(type) {
+	case *authv1.LoginRequest_Email:
+		user, err = s.db.GetUserByEmail(ctx, req.GetEmail())
 
-	case *authnv1.LoginRequest_Email:
-		return s.loginByEmail(ctx, req)
+	case *authv1.LoginRequest_Username:
+		user, err = s.db.GetUserByName(ctx, req.GetUsername())
 
-	case *authnv1.LoginRequest_Username:
-		return s.loginByUsername(ctx, req)
-
+	case nil:
+		return nil, status.Error(codes.InvalidArgument, "login credentials are required")
 	}
 
-	return nil, status.Error(codes.InvalidArgument, "login credentials are required")
-}
+	if err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			return nil, status.Error(codes.NotFound, "user not found")
+		}
+		// TODO: check for timeouts
+		return nil, status.Error(codes.Internal, "unable to make request to database")
+	}
 
-func (s *AuthService) loginByEmail(ctx context.Context, req *authnv1.LoginRequest) (*authnv1.LoginResponse, error) {
-	return nil, nil
-}
-func (s *AuthService) loginByUsername(ctx context.Context, req *authnv1.LoginRequest) (*authnv1.LoginResponse, error) {
-	return nil, nil
+	// 2. check his password
+	if !crypt.VerifyPassword(req.Password, user.PasswordHash) {
+		return nil, status.Error(codes.Unauthenticated, "wrong username, email or password")
+	}
+
+	// 3. generate auth code
+	authCode := crypt.MakeAuthCode()
+
+	// 4. store it in cache with TTL of 60
+	if err := s.cache.StoreAuthCode(ctx, authCode, &cache.UserState{
+		UserID:        user.UUID,
+		CodeChallenge: req.GetChallenge(),
+	}); err != nil {
+		// TODO: check for conflicts(?)
+		return nil, status.Error(codes.Internal, "unable to store auth code in cache")
+	}
+
+	// 5. send auth code
+	return &authv1.LoginResponse{
+		AuthCode: &authCode,
+	}, nil
 }

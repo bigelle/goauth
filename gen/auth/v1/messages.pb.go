@@ -4,7 +4,7 @@
 // 	protoc        (unknown)
 // source: auth/v1/messages.proto
 
-package authnv1
+package authv1
 
 import (
 	_ "buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
@@ -169,7 +169,7 @@ var File_auth_v1_messages_proto protoreflect.FileDescriptor
 
 const file_auth_v1_messages_proto_rawDesc = "" +
 	"\n" +
-	"\x16auth/v1/messages.proto\x12\bauthn.v1\x1a\x1bbuf/validate/validate.proto\"\x8c\x01\n" +
+	"\x16auth/v1/messages.proto\x12\aauth.v1\x1a\x1bbuf/validate/validate.proto\"\x8c\x01\n" +
 	"\fLoginRequest\x12\x1c\n" +
 	"\busername\x18\x01 \x01(\tH\x00R\busername\x12\x16\n" +
 	"\x05email\x18\x02 \x01(\tH\x00R\x05email\x12\x1a\n" +
@@ -180,7 +180,7 @@ const file_auth_v1_messages_proto_rawDesc = "" +
 	"\rLoginResponse\x12 \n" +
 	"\tauth_code\x18\x01 \x01(\tH\x00R\bauthCode\x88\x01\x01B\f\n" +
 	"\n" +
-	"_auth_codeB,Z*github.com/bigelle/authn/gen/go/v1;authnv1b\x06proto3"
+	"_auth_codeB*Z(github.com/bigelle/auth/gen/go/v1;authv1b\x06proto3"
 
 var (
 	file_auth_v1_messages_proto_rawDescOnce sync.Once
@@ -196,8 +196,8 @@ func file_auth_v1_messages_proto_rawDescGZIP() []byte {
 
 var file_auth_v1_messages_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_auth_v1_messages_proto_goTypes = []any{
-	(*LoginRequest)(nil),  // 0: authn.v1.LoginRequest
-	(*LoginResponse)(nil), // 1: authn.v1.LoginResponse
+	(*LoginRequest)(nil),  // 0: auth.v1.LoginRequest
+	(*LoginResponse)(nil), // 1: auth.v1.LoginResponse
 }
 var file_auth_v1_messages_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type

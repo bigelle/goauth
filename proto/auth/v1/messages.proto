@@ -1,10 +1,10 @@
 syntax = "proto3";
 
-package authn.v1;
+package auth.v1;
 
 import "buf/validate/validate.proto";
 
-option go_package = "github.com/bigelle/authn/gen/go/v1;authnv1";
+option go_package = "github.com/bigelle/auth/gen/go/v1;authv1";
 
 // TODO: add validation using validate.proto
 message LoginRequest {

@@ -1,17 +1,27 @@
 package main
 
 import (
-	"github.com/bigelle/auth"
+	"net"
+
+	authv1 "github.com/bigelle/auth/gen/auth/v1"
+	"github.com/bigelle/auth/internal/service"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"google.golang.org/grpc"
 )
 
 func main() {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 
-	cfg, err := auth.SetupConfig()
+	listener, err := net.Listen("tcp", ":50051")
 	if err != nil {
-		log.Err(err).Msg("failed to setup config")
+		log.Fatal().AnErr("socket error", err).Msg("error opening tcp socket")
 	}
-	_ = cfg // FIXME:
+
+	server := grpc.NewServer()
+	authv1.RegisterAuthServiceServer(server, &service.AuthService{})
+
+	if err := server.Serve(listener); err != nil {
+		log.Fatal().AnErr("grpc server error", err).Msg("error serving grpc server on tcp socket")
+	}
 }
