@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -68,13 +69,15 @@ func (db *Sqlite3Database) CreateUser(ctx context.Context, name, email, pass str
 	return nil
 }
 
-const sqlite3GetUserByEmailRequest = `
-SELECT * FROM users WHERE email = (?);
+const sqlite3GetUserRequest = `
+SELECT * FROM users WHERE %s = (?);
 `
 
 func (db *Sqlite3Database) GetUserByEmail(ctx context.Context, email string) (*User, error) {
+	request := fmt.Sprintf(sqlite3GetUserRequest, "email")
+
 	var user User
-	err := db.db.GetContext(ctx, &user, sqlite3GetUserByEmailRequest, email)
+	err := db.db.GetContext(ctx, &user, request, email)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNotFound
@@ -86,7 +89,18 @@ func (db *Sqlite3Database) GetUserByEmail(ctx context.Context, email string) (*U
 }
 
 func (db *Sqlite3Database) GetUserByName(ctx context.Context, username string) (*User, error) {
-	return nil, errors.ErrUnsupported
+	request := fmt.Sprintf(sqlite3GetUserRequest, "name")
+
+	var user User
+	err := db.db.GetContext(ctx, &user, request, username)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+
+	return &user, nil
 }
 
 func (db *Sqlite3Database) Close() error {
