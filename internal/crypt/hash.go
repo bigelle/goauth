@@ -35,3 +35,8 @@ func MakeAuthCode() string {
 	rand.Read(buf)
 	return base64.RawURLEncoding.EncodeToString(buf)
 }
+
+func HashAuthCodeSHA256(code string) string {
+	sum := sha256.Sum256([]byte(code))
+	return hex.EncodeToString(sum[:])
+}

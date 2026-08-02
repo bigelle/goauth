@@ -13,6 +13,10 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+func NewAuthService(db db.Database, cache cache.Cache) *AuthService {
+	return &AuthService{db: db, cache: cache}
+}
+
 type AuthService struct {
 	authv1.UnimplementedAuthServiceServer
 	cache cache.Cache
@@ -57,7 +61,7 @@ func (s *AuthService) Login(c context.Context, req *authv1.LoginRequest) (*authv
 	authCode := crypt.MakeAuthCode()
 
 	// 4. store it in cache with TTL of 60
-	if err := s.cache.StoreAuthCode(ctx, authCode, &cache.UserState{
+	if err := s.cache.StoreAuthContext(ctx, authCode, &cache.AuthContext{
 		UserID:        user.UUID,
 		CodeChallenge: req.GetChallenge(),
 	}); err != nil {
