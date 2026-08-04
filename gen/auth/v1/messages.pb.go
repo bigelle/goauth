@@ -22,33 +22,33 @@ const (
 )
 
 // TODO: add validation using validate.proto
-type LoginRequest struct {
+type AuthenticateAccountRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Credential:
 	//
-	//	*LoginRequest_Username
-	//	*LoginRequest_Email
-	Credential    isLoginRequest_Credential `protobuf_oneof:"credential"`
-	Password      string                    `protobuf:"bytes,3,opt,name=password,proto3" json:"password,omitempty"`
-	Challenge     string                    `protobuf:"bytes,4,opt,name=challenge,proto3" json:"challenge,omitempty"`
+	//	*AuthenticateAccountRequest_Username
+	//	*AuthenticateAccountRequest_Email
+	Credential    isAuthenticateAccountRequest_Credential `protobuf_oneof:"credential"`
+	Password      string                                  `protobuf:"bytes,3,opt,name=password,proto3" json:"password,omitempty"`
+	Challenge     string                                  `protobuf:"bytes,4,opt,name=challenge,proto3" json:"challenge,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *LoginRequest) Reset() {
-	*x = LoginRequest{}
+func (x *AuthenticateAccountRequest) Reset() {
+	*x = AuthenticateAccountRequest{}
 	mi := &file_auth_v1_messages_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *LoginRequest) String() string {
+func (x *AuthenticateAccountRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*LoginRequest) ProtoMessage() {}
+func (*AuthenticateAccountRequest) ProtoMessage() {}
 
-func (x *LoginRequest) ProtoReflect() protoreflect.Message {
+func (x *AuthenticateAccountRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_auth_v1_messages_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -60,87 +60,87 @@ func (x *LoginRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use LoginRequest.ProtoReflect.Descriptor instead.
-func (*LoginRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use AuthenticateAccountRequest.ProtoReflect.Descriptor instead.
+func (*AuthenticateAccountRequest) Descriptor() ([]byte, []int) {
 	return file_auth_v1_messages_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *LoginRequest) GetCredential() isLoginRequest_Credential {
+func (x *AuthenticateAccountRequest) GetCredential() isAuthenticateAccountRequest_Credential {
 	if x != nil {
 		return x.Credential
 	}
 	return nil
 }
 
-func (x *LoginRequest) GetUsername() string {
+func (x *AuthenticateAccountRequest) GetUsername() string {
 	if x != nil {
-		if x, ok := x.Credential.(*LoginRequest_Username); ok {
+		if x, ok := x.Credential.(*AuthenticateAccountRequest_Username); ok {
 			return x.Username
 		}
 	}
 	return ""
 }
 
-func (x *LoginRequest) GetEmail() string {
+func (x *AuthenticateAccountRequest) GetEmail() string {
 	if x != nil {
-		if x, ok := x.Credential.(*LoginRequest_Email); ok {
+		if x, ok := x.Credential.(*AuthenticateAccountRequest_Email); ok {
 			return x.Email
 		}
 	}
 	return ""
 }
 
-func (x *LoginRequest) GetPassword() string {
+func (x *AuthenticateAccountRequest) GetPassword() string {
 	if x != nil {
 		return x.Password
 	}
 	return ""
 }
 
-func (x *LoginRequest) GetChallenge() string {
+func (x *AuthenticateAccountRequest) GetChallenge() string {
 	if x != nil {
 		return x.Challenge
 	}
 	return ""
 }
 
-type isLoginRequest_Credential interface {
-	isLoginRequest_Credential()
+type isAuthenticateAccountRequest_Credential interface {
+	isAuthenticateAccountRequest_Credential()
 }
 
-type LoginRequest_Username struct {
+type AuthenticateAccountRequest_Username struct {
 	Username string `protobuf:"bytes,1,opt,name=username,proto3,oneof"`
 }
 
-type LoginRequest_Email struct {
+type AuthenticateAccountRequest_Email struct {
 	Email string `protobuf:"bytes,2,opt,name=email,proto3,oneof"`
 }
 
-func (*LoginRequest_Username) isLoginRequest_Credential() {}
+func (*AuthenticateAccountRequest_Username) isAuthenticateAccountRequest_Credential() {}
 
-func (*LoginRequest_Email) isLoginRequest_Credential() {}
+func (*AuthenticateAccountRequest_Email) isAuthenticateAccountRequest_Credential() {}
 
-type LoginResponse struct {
+type AuthenticateAccountResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	AuthCode      *string                `protobuf:"bytes,1,opt,name=auth_code,json=authCode,proto3,oneof" json:"auth_code,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *LoginResponse) Reset() {
-	*x = LoginResponse{}
+func (x *AuthenticateAccountResponse) Reset() {
+	*x = AuthenticateAccountResponse{}
 	mi := &file_auth_v1_messages_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *LoginResponse) String() string {
+func (x *AuthenticateAccountResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*LoginResponse) ProtoMessage() {}
+func (*AuthenticateAccountResponse) ProtoMessage() {}
 
-func (x *LoginResponse) ProtoReflect() protoreflect.Message {
+func (x *AuthenticateAccountResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_auth_v1_messages_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -152,12 +152,12 @@ func (x *LoginResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use LoginResponse.ProtoReflect.Descriptor instead.
-func (*LoginResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use AuthenticateAccountResponse.ProtoReflect.Descriptor instead.
+func (*AuthenticateAccountResponse) Descriptor() ([]byte, []int) {
 	return file_auth_v1_messages_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *LoginResponse) GetAuthCode() string {
+func (x *AuthenticateAccountResponse) GetAuthCode() string {
 	if x != nil && x.AuthCode != nil {
 		return *x.AuthCode
 	}
@@ -168,15 +168,15 @@ var File_auth_v1_messages_proto protoreflect.FileDescriptor
 
 const file_auth_v1_messages_proto_rawDesc = "" +
 	"\n" +
-	"\x16auth/v1/messages.proto\x12\aauth.v1\"\x8c\x01\n" +
-	"\fLoginRequest\x12\x1c\n" +
+	"\x16auth/v1/messages.proto\x12\aauth.v1\"\x9a\x01\n" +
+	"\x1aAuthenticateAccountRequest\x12\x1c\n" +
 	"\busername\x18\x01 \x01(\tH\x00R\busername\x12\x16\n" +
 	"\x05email\x18\x02 \x01(\tH\x00R\x05email\x12\x1a\n" +
 	"\bpassword\x18\x03 \x01(\tR\bpassword\x12\x1c\n" +
 	"\tchallenge\x18\x04 \x01(\tR\tchallengeB\f\n" +
 	"\n" +
-	"credential\"?\n" +
-	"\rLoginResponse\x12 \n" +
+	"credential\"M\n" +
+	"\x1bAuthenticateAccountResponse\x12 \n" +
 	"\tauth_code\x18\x01 \x01(\tH\x00R\bauthCode\x88\x01\x01B\f\n" +
 	"\n" +
 	"_auth_codeB/Z-github.com/bigelle/auth/gen/go/auth/v1;authv1b\x06proto3"
@@ -195,8 +195,8 @@ func file_auth_v1_messages_proto_rawDescGZIP() []byte {
 
 var file_auth_v1_messages_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_auth_v1_messages_proto_goTypes = []any{
-	(*LoginRequest)(nil),  // 0: auth.v1.LoginRequest
-	(*LoginResponse)(nil), // 1: auth.v1.LoginResponse
+	(*AuthenticateAccountRequest)(nil),  // 0: auth.v1.AuthenticateAccountRequest
+	(*AuthenticateAccountResponse)(nil), // 1: auth.v1.AuthenticateAccountResponse
 }
 var file_auth_v1_messages_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -212,8 +212,8 @@ func file_auth_v1_messages_proto_init() {
 		return
 	}
 	file_auth_v1_messages_proto_msgTypes[0].OneofWrappers = []any{
-		(*LoginRequest_Username)(nil),
-		(*LoginRequest_Email)(nil),
+		(*AuthenticateAccountRequest_Username)(nil),
+		(*AuthenticateAccountRequest_Email)(nil),
 	}
 	file_auth_v1_messages_proto_msgTypes[1].OneofWrappers = []any{}
 	type x struct{}

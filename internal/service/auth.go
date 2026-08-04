@@ -23,7 +23,7 @@ type AuthService struct {
 	db    db.Database
 }
 
-func (s *AuthService) Login(c context.Context, req *authv1.LoginRequest) (*authv1.LoginResponse, error) {
+func (s *AuthService) AuthenticateAccount(c context.Context, req *authv1.AuthenticateAccountRequest) (*authv1.AuthenticateAccountResponse, error) {
 	var (
 		user *db.User
 		err  error
@@ -33,10 +33,10 @@ func (s *AuthService) Login(c context.Context, req *authv1.LoginRequest) (*authv
 	defer cancel()
 
 	switch req.Credential.(type) {
-	case *authv1.LoginRequest_Email:
+	case *authv1.AuthenticateAccountRequest_Email:
 		user, err = s.db.GetUserByEmail(ctx, req.GetEmail())
 
-	case *authv1.LoginRequest_Username:
+	case *authv1.AuthenticateAccountRequest_Username:
 		user, err = s.db.GetUserByName(ctx, req.GetUsername())
 
 	case nil:
@@ -65,7 +65,7 @@ func (s *AuthService) Login(c context.Context, req *authv1.LoginRequest) (*authv
 		return nil, status.Error(codes.Internal, "unable to store auth code in cache")
 	}
 
-	return &authv1.LoginResponse{
+	return &authv1.AuthenticateAccountResponse{
 		AuthCode: &authCode,
 	}, nil
 }

@@ -5,7 +5,7 @@ package auth.v1;
 option go_package = "github.com/bigelle/auth/gen/go/auth/v1;authv1";
 
 // TODO: add validation using validate.proto
-message LoginRequest {
+message AuthenticateAccountRequest {
   oneof credential {
     string username = 1;
     string email = 2;
@@ -14,6 +14,6 @@ message LoginRequest {
   string challenge = 4;
 }
 
-message LoginResponse {
+message AuthenticateAccountResponse {
   optional string auth_code = 1;
 }
