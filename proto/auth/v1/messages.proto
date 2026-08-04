@@ -2,15 +2,7 @@ syntax = "proto3";
 
 package auth.v1;
 
-option go_package = "github.com/bigelle/auth/gen/go/v1;authv1";
-
-message RegisterRequest {
-  string username = 1;
-  string email = 2;
-  string password = 3;
-}
-
-message RegisterResponse {}
+option go_package = "github.com/bigelle/auth/gen/go/auth/v1;authv1";
 
 // TODO: add validation using validate.proto
 message LoginRequest {

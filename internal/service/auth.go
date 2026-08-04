@@ -23,23 +23,6 @@ type AuthService struct {
 	db    db.Database
 }
 
-func (s *AuthService) Register(c context.Context, req *authv1.RegisterRequest) (*authv1.RegisterResponse, error) {
-	ctx, cancel := context.WithTimeout(c, 30*time.Second)
-	defer cancel()
-
-	pass, err := crypt.HashPassword(req.Password)
-	if err != nil {
-		return nil, status.Error(codes.Internal, "unable to hash the password")
-	}
-
-	if err = s.db.CreateUser(ctx, req.Username, req.Email, pass); err != nil {
-		// FIXME: handle errors properly
-		return nil, status.Error(codes.InvalidArgument, "bad request")
-	}
-
-	return &authv1.RegisterResponse{}, nil
-}
-
 func (s *AuthService) Login(c context.Context, req *authv1.LoginRequest) (*authv1.LoginResponse, error) {
 	var (
 		user *db.User

@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package account.v1;
+
+import "account/v1/messages.proto";
+
+option go_package = "github.com/bigelle/auth/gen/go/account/v1;accountv1";
+
+service AccountService {
+  rpc CreateAccount(CreateAccountRequest) returns (CreateAccountResponse);
+}

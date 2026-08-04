@@ -3,6 +3,7 @@ package main
 import (
 	"net"
 
+	accountv1 "github.com/bigelle/auth/gen/account/v1"
 	authv1 "github.com/bigelle/auth/gen/auth/v1"
 	"github.com/bigelle/auth/internal/cache"
 	"github.com/bigelle/auth/internal/db"
@@ -42,10 +43,14 @@ func main() {
 	}
 	log.Info().Int("port", 50051).Msg("listening on port")
 
-	service := service.NewAuthService(db, c)
-
 	server := grpc.NewServer()
-	authv1.RegisterAuthServiceServer(server, service)
+
+	authService := service.NewAuthService(db, c)
+	authv1.RegisterAuthServiceServer(server, authService)
+
+	accountService := service.NewAccountService(db, c)
+	accountv1.RegisterAccountServiceServer(server, accountService)
+
 	reflection.Register(server)
 
 	log.Info().Msg("server is online")

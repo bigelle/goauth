@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package account.v1;
+
+option go_package = "github.com/bigelle/auth/gen/go/account/v1;accountv1";
+
+message CreateAccountRequest {
+  string username = 1;
+  string email = 2;
+  string password = 3;
+}
+
+message CreateAccountResponse {}
