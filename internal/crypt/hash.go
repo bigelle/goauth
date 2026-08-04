@@ -14,20 +14,22 @@ import (
 var pepper = []byte(os.Getenv("CRYPT_PEPPER"))
 
 func HashPassword(pass string) (string, error) {
-	mac := hmac.New(sha256.New, pepper)
-	mac.Write([]byte(pass))
-	passWithPepper := hex.EncodeToString(mac.Sum(nil))
+	passWithPepper := encodeString(pass)
 
 	bytes, err := bcrypt.GenerateFromPassword([]byte(passWithPepper), bcrypt.DefaultCost)
 	return string(bytes), err
 }
 
 func VerifyPassword(pass string, hash string) bool {
-	mac := hmac.New(sha256.New, pepper)
-	mac.Write([]byte(pass))
-	passWithPepper := hex.EncodeToString(mac.Sum(nil))
+	passWithPepper := encodeString(pass)
 
 	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(passWithPepper)) == nil
+}
+
+func encodeString(str string) string {
+	mac := hmac.New(sha256.New, pepper)
+	mac.Write([]byte(str))
+	return hex.EncodeToString(mac.Sum(nil))
 }
 
 func MakeAuthCode() string {

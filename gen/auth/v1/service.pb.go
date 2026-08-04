@@ -24,19 +24,24 @@ var File_auth_v1_service_proto protoreflect.FileDescriptor
 
 const file_auth_v1_service_proto_rawDesc = "" +
 	"\n" +
-	"\x15auth/v1/service.proto\x12\aauth.v1\x1a\x16auth/v1/messages.proto2E\n" +
-	"\vAuthService\x126\n" +
+	"\x15auth/v1/service.proto\x12\aauth.v1\x1a\x16auth/v1/messages.proto2\x86\x01\n" +
+	"\vAuthService\x12?\n" +
+	"\bRegister\x12\x18.auth.v1.RegisterRequest\x1a\x19.auth.v1.RegisterResponse\x126\n" +
 	"\x05Login\x12\x15.auth.v1.LoginRequest\x1a\x16.auth.v1.LoginResponseB*Z(github.com/bigelle/auth/gen/go/v1;authv1b\x06proto3"
 
 var file_auth_v1_service_proto_goTypes = []any{
-	(*LoginRequest)(nil),  // 0: auth.v1.LoginRequest
-	(*LoginResponse)(nil), // 1: auth.v1.LoginResponse
+	(*RegisterRequest)(nil),  // 0: auth.v1.RegisterRequest
+	(*LoginRequest)(nil),     // 1: auth.v1.LoginRequest
+	(*RegisterResponse)(nil), // 2: auth.v1.RegisterResponse
+	(*LoginResponse)(nil),    // 3: auth.v1.LoginResponse
 }
 var file_auth_v1_service_proto_depIdxs = []int32{
-	0, // 0: auth.v1.AuthService.Login:input_type -> auth.v1.LoginRequest
-	1, // 1: auth.v1.AuthService.Login:output_type -> auth.v1.LoginResponse
-	1, // [1:2] is the sub-list for method output_type
-	0, // [0:1] is the sub-list for method input_type
+	0, // 0: auth.v1.AuthService.Register:input_type -> auth.v1.RegisterRequest
+	1, // 1: auth.v1.AuthService.Login:input_type -> auth.v1.LoginRequest
+	2, // 2: auth.v1.AuthService.Register:output_type -> auth.v1.RegisterResponse
+	3, // 3: auth.v1.AuthService.Login:output_type -> auth.v1.LoginResponse
+	2, // [2:4] is the sub-list for method output_type
+	0, // [0:2] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name

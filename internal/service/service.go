@@ -23,8 +23,24 @@ type AuthService struct {
 	db    db.Database
 }
 
+func (s *AuthService) Register(c context.Context, req *authv1.RegisterRequest) (*authv1.RegisterResponse, error) {
+	ctx, cancel := context.WithTimeout(c, 30*time.Second)
+	defer cancel()
+
+	pass, err := crypt.HashPassword(req.Password)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "unable to hash the password")
+	}
+
+	if err = s.db.CreateUser(ctx, req.Username, req.Email, pass); err != nil {
+		// FIXME: handle errors properly
+		return nil, status.Error(codes.InvalidArgument, "bad request")
+	}
+
+	return &authv1.RegisterResponse{}, nil
+}
+
 func (s *AuthService) Login(c context.Context, req *authv1.LoginRequest) (*authv1.LoginResponse, error) {
-	// 1. get user by email or username
 	var (
 		user *db.User
 		err  error
@@ -52,15 +68,12 @@ func (s *AuthService) Login(c context.Context, req *authv1.LoginRequest) (*authv
 		return nil, status.Error(codes.Internal, "unable to make request to database")
 	}
 
-	// 2. check his password
 	if !crypt.VerifyPassword(req.Password, user.PasswordHash) {
 		return nil, status.Error(codes.Unauthenticated, "wrong username, email or password")
 	}
 
-	// 3. generate auth code
 	authCode := crypt.MakeAuthCode()
 
-	// 4. store it in cache with TTL of 60
 	if err := s.cache.StoreAuthContext(ctx, authCode, &cache.AuthContext{
 		UserID:        user.UUID,
 		CodeChallenge: req.GetChallenge(),
@@ -69,7 +82,6 @@ func (s *AuthService) Login(c context.Context, req *authv1.LoginRequest) (*authv
 		return nil, status.Error(codes.Internal, "unable to store auth code in cache")
 	}
 
-	// 5. send auth code
 	return &authv1.LoginResponse{
 		AuthCode: &authCode,
 	}, nil

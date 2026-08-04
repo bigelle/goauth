@@ -7,5 +7,6 @@ import "auth/v1/messages.proto";
 option go_package = "github.com/bigelle/auth/gen/go/v1;authv1";
 
 service AuthService {
+  rpc Register(RegisterRequest) returns (RegisterResponse);
   rpc Login(LoginRequest) returns (LoginResponse);
 }
