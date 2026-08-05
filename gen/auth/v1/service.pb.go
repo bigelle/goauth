@@ -24,19 +24,24 @@ var File_auth_v1_service_proto protoreflect.FileDescriptor
 
 const file_auth_v1_service_proto_rawDesc = "" +
 	"\n" +
-	"\x15auth/v1/service.proto\x12\aauth.v1\x1a\x16auth/v1/messages.proto2o\n" +
+	"\x15auth/v1/service.proto\x12\aauth.v1\x1a\x16auth/v1/messages.proto2\xc8\x01\n" +
 	"\vAuthService\x12`\n" +
-	"\x13AuthenticateAccount\x12#.auth.v1.AuthenticateAccountRequest\x1a$.auth.v1.AuthenticateAccountResponseB/Z-github.com/bigelle/auth/gen/go/auth/v1;authv1b\x06proto3"
+	"\x13AuthenticateAccount\x12#.auth.v1.AuthenticateAccountRequest\x1a$.auth.v1.AuthenticateAccountResponse\x12W\n" +
+	"\x10ExchangeAuthCode\x12 .auth.v1.ExchangeAuthCodeRequest\x1a!.auth.v1.ExchangeAuthCodeResponseB/Z-github.com/bigelle/auth/gen/go/auth/v1;authv1b\x06proto3"
 
 var file_auth_v1_service_proto_goTypes = []any{
 	(*AuthenticateAccountRequest)(nil),  // 0: auth.v1.AuthenticateAccountRequest
-	(*AuthenticateAccountResponse)(nil), // 1: auth.v1.AuthenticateAccountResponse
+	(*ExchangeAuthCodeRequest)(nil),     // 1: auth.v1.ExchangeAuthCodeRequest
+	(*AuthenticateAccountResponse)(nil), // 2: auth.v1.AuthenticateAccountResponse
+	(*ExchangeAuthCodeResponse)(nil),    // 3: auth.v1.ExchangeAuthCodeResponse
 }
 var file_auth_v1_service_proto_depIdxs = []int32{
 	0, // 0: auth.v1.AuthService.AuthenticateAccount:input_type -> auth.v1.AuthenticateAccountRequest
-	1, // 1: auth.v1.AuthService.AuthenticateAccount:output_type -> auth.v1.AuthenticateAccountResponse
-	1, // [1:2] is the sub-list for method output_type
-	0, // [0:1] is the sub-list for method input_type
+	1, // 1: auth.v1.AuthService.ExchangeAuthCode:input_type -> auth.v1.ExchangeAuthCodeRequest
+	2, // 2: auth.v1.AuthService.AuthenticateAccount:output_type -> auth.v1.AuthenticateAccountResponse
+	3, // 3: auth.v1.AuthService.ExchangeAuthCode:output_type -> auth.v1.ExchangeAuthCodeResponse
+	2, // [2:4] is the sub-list for method output_type
+	0, // [0:2] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name

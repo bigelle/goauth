@@ -20,6 +20,7 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	AuthService_AuthenticateAccount_FullMethodName = "/auth.v1.AuthService/AuthenticateAccount"
+	AuthService_ExchangeAuthCode_FullMethodName    = "/auth.v1.AuthService/ExchangeAuthCode"
 )
 
 // AuthServiceClient is the client API for AuthService service.
@@ -27,6 +28,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type AuthServiceClient interface {
 	AuthenticateAccount(ctx context.Context, in *AuthenticateAccountRequest, opts ...grpc.CallOption) (*AuthenticateAccountResponse, error)
+	ExchangeAuthCode(ctx context.Context, in *ExchangeAuthCodeRequest, opts ...grpc.CallOption) (*ExchangeAuthCodeResponse, error)
 }
 
 type authServiceClient struct {
@@ -47,11 +49,22 @@ func (c *authServiceClient) AuthenticateAccount(ctx context.Context, in *Authent
 	return out, nil
 }
 
+func (c *authServiceClient) ExchangeAuthCode(ctx context.Context, in *ExchangeAuthCodeRequest, opts ...grpc.CallOption) (*ExchangeAuthCodeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ExchangeAuthCodeResponse)
+	err := c.cc.Invoke(ctx, AuthService_ExchangeAuthCode_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AuthServiceServer is the server API for AuthService service.
 // All implementations must embed UnimplementedAuthServiceServer
 // for forward compatibility.
 type AuthServiceServer interface {
 	AuthenticateAccount(context.Context, *AuthenticateAccountRequest) (*AuthenticateAccountResponse, error)
+	ExchangeAuthCode(context.Context, *ExchangeAuthCodeRequest) (*ExchangeAuthCodeResponse, error)
 	mustEmbedUnimplementedAuthServiceServer()
 }
 
@@ -64,6 +77,9 @@ type UnimplementedAuthServiceServer struct{}
 
 func (UnimplementedAuthServiceServer) AuthenticateAccount(context.Context, *AuthenticateAccountRequest) (*AuthenticateAccountResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method AuthenticateAccount not implemented")
+}
+func (UnimplementedAuthServiceServer) ExchangeAuthCode(context.Context, *ExchangeAuthCodeRequest) (*ExchangeAuthCodeResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ExchangeAuthCode not implemented")
 }
 func (UnimplementedAuthServiceServer) mustEmbedUnimplementedAuthServiceServer() {}
 func (UnimplementedAuthServiceServer) testEmbeddedByValue()                     {}
@@ -104,6 +120,24 @@ func _AuthService_AuthenticateAccount_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AuthService_ExchangeAuthCode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ExchangeAuthCodeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).ExchangeAuthCode(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_ExchangeAuthCode_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).ExchangeAuthCode(ctx, req.(*ExchangeAuthCodeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AuthService_ServiceDesc is the grpc.ServiceDesc for AuthService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -114,6 +148,10 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "AuthenticateAccount",
 			Handler:    _AuthService_AuthenticateAccount_Handler,
+		},
+		{
+			MethodName: "ExchangeAuthCode",
+			Handler:    _AuthService_ExchangeAuthCode_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

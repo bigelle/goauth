@@ -4,6 +4,7 @@ import (
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha256"
+	"crypto/subtle"
 	"encoding/base64"
 	"encoding/hex"
 	"os"
@@ -36,6 +37,13 @@ func MakeAuthCode() string {
 	buf := make([]byte, 32)
 	rand.Read(buf)
 	return base64.RawURLEncoding.EncodeToString(buf)
+}
+
+func SolvePKCEChallenge(challenge, verifier string) bool {
+	hashed := sha256.Sum256([]byte(verifier))
+	base64Url := base64.RawURLEncoding.EncodeToString(hashed[:])
+
+	return subtle.ConstantTimeCompare([]byte(challenge), []byte(base64Url)) == 1
 }
 
 func HashAuthCodeSHA256(code string) string {

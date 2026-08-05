@@ -8,4 +8,5 @@ option go_package = "github.com/bigelle/auth/gen/go/auth/v1;authv1";
 
 service AuthService {
   rpc AuthenticateAccount(AuthenticateAccountRequest) returns (AuthenticateAccountResponse);
+  rpc ExchangeAuthCode(ExchangeAuthCodeRequest) returns (ExchangeAuthCodeResponse);
 }

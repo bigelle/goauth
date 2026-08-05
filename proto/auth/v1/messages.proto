@@ -17,3 +17,12 @@ message AuthenticateAccountRequest {
 message AuthenticateAccountResponse {
   optional string auth_code = 1;
 }
+
+message ExchangeAuthCodeRequest {
+  string code = 1;
+  string verifier = 2;
+}
+
+message ExchangeAuthCodeResponse {
+  string access_code = 1;
+}

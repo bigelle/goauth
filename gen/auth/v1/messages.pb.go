@@ -164,6 +164,102 @@ func (x *AuthenticateAccountResponse) GetAuthCode() string {
 	return ""
 }
 
+type ExchangeAuthCodeRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Code          string                 `protobuf:"bytes,1,opt,name=code,proto3" json:"code,omitempty"`
+	Verifier      string                 `protobuf:"bytes,2,opt,name=verifier,proto3" json:"verifier,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ExchangeAuthCodeRequest) Reset() {
+	*x = ExchangeAuthCodeRequest{}
+	mi := &file_auth_v1_messages_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ExchangeAuthCodeRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ExchangeAuthCodeRequest) ProtoMessage() {}
+
+func (x *ExchangeAuthCodeRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_auth_v1_messages_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ExchangeAuthCodeRequest.ProtoReflect.Descriptor instead.
+func (*ExchangeAuthCodeRequest) Descriptor() ([]byte, []int) {
+	return file_auth_v1_messages_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *ExchangeAuthCodeRequest) GetCode() string {
+	if x != nil {
+		return x.Code
+	}
+	return ""
+}
+
+func (x *ExchangeAuthCodeRequest) GetVerifier() string {
+	if x != nil {
+		return x.Verifier
+	}
+	return ""
+}
+
+type ExchangeAuthCodeResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	AccessCode    string                 `protobuf:"bytes,1,opt,name=access_code,json=accessCode,proto3" json:"access_code,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ExchangeAuthCodeResponse) Reset() {
+	*x = ExchangeAuthCodeResponse{}
+	mi := &file_auth_v1_messages_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ExchangeAuthCodeResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ExchangeAuthCodeResponse) ProtoMessage() {}
+
+func (x *ExchangeAuthCodeResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_auth_v1_messages_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ExchangeAuthCodeResponse.ProtoReflect.Descriptor instead.
+func (*ExchangeAuthCodeResponse) Descriptor() ([]byte, []int) {
+	return file_auth_v1_messages_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *ExchangeAuthCodeResponse) GetAccessCode() string {
+	if x != nil {
+		return x.AccessCode
+	}
+	return ""
+}
+
 var File_auth_v1_messages_proto protoreflect.FileDescriptor
 
 const file_auth_v1_messages_proto_rawDesc = "" +
@@ -179,7 +275,13 @@ const file_auth_v1_messages_proto_rawDesc = "" +
 	"\x1bAuthenticateAccountResponse\x12 \n" +
 	"\tauth_code\x18\x01 \x01(\tH\x00R\bauthCode\x88\x01\x01B\f\n" +
 	"\n" +
-	"_auth_codeB/Z-github.com/bigelle/auth/gen/go/auth/v1;authv1b\x06proto3"
+	"_auth_code\"I\n" +
+	"\x17ExchangeAuthCodeRequest\x12\x12\n" +
+	"\x04code\x18\x01 \x01(\tR\x04code\x12\x1a\n" +
+	"\bverifier\x18\x02 \x01(\tR\bverifier\";\n" +
+	"\x18ExchangeAuthCodeResponse\x12\x1f\n" +
+	"\vaccess_code\x18\x01 \x01(\tR\n" +
+	"accessCodeB/Z-github.com/bigelle/auth/gen/go/auth/v1;authv1b\x06proto3"
 
 var (
 	file_auth_v1_messages_proto_rawDescOnce sync.Once
@@ -193,10 +295,12 @@ func file_auth_v1_messages_proto_rawDescGZIP() []byte {
 	return file_auth_v1_messages_proto_rawDescData
 }
 
-var file_auth_v1_messages_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_auth_v1_messages_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_auth_v1_messages_proto_goTypes = []any{
 	(*AuthenticateAccountRequest)(nil),  // 0: auth.v1.AuthenticateAccountRequest
 	(*AuthenticateAccountResponse)(nil), // 1: auth.v1.AuthenticateAccountResponse
+	(*ExchangeAuthCodeRequest)(nil),     // 2: auth.v1.ExchangeAuthCodeRequest
+	(*ExchangeAuthCodeResponse)(nil),    // 3: auth.v1.ExchangeAuthCodeResponse
 }
 var file_auth_v1_messages_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -222,7 +326,7 @@ func file_auth_v1_messages_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_auth_v1_messages_proto_rawDesc), len(file_auth_v1_messages_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
