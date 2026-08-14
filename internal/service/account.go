@@ -4,25 +4,27 @@ import (
 	"context"
 	"time"
 
+	"github.com/bigelle/auth/ent"
 	accountv1 "github.com/bigelle/auth/gen/account/v1"
 	"github.com/bigelle/auth/internal/cache"
 	"github.com/bigelle/auth/internal/crypt"
-	"github.com/bigelle/auth/internal/db"
+	"github.com/google/uuid"
+	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
-func NewAccountService(db db.Database, cache cache.Cache) *AccountService {
+func NewAccountService(db *ent.Client, cache cache.Cache) *AccountService {
 	return &AccountService{
-		dbcon: db,
-		c:     cache,
+		db: db,
+		c:  cache,
 	}
 }
 
 type AccountService struct {
 	accountv1.UnimplementedAccountServiceServer
-	c     cache.Cache
-	dbcon db.Database
+	c  cache.Cache
+	db *ent.Client
 }
 
 func (s *AccountService) CreateAccount(c context.Context, req *accountv1.CreateAccountRequest) (*accountv1.CreateAccountResponse, error) {
@@ -34,9 +36,25 @@ func (s *AccountService) CreateAccount(c context.Context, req *accountv1.CreateA
 		return nil, status.Error(codes.Internal, "unable to hash password")
 	}
 
-	if err = s.dbcon.CreateUser(ctx, req.Username, req.Email, pass); err != nil {
-		// FIXME: handle the error properly
-		return nil, status.Error(codes.InvalidArgument, "error storing user in db, idk fix me or some shi")
+	uuid := uuid.Must(uuid.NewV7())
+
+	_, err = s.db.User.Create().
+		SetID(uuid.String()).
+		SetName(req.Username).
+		SetEmail(req.Email).
+		SetPasswordHash(pass).
+		Save(ctx)
+	if err != nil {
+		log.Err(err).Msg("error creating user")
+		if ent.IsValidationError(err) {
+			return nil, status.Error(codes.InvalidArgument, "bad request")
+		}
+		if ent.IsConstraintError(err) {
+			// NOTE: what if it was a uuid collision?
+			// that still could happen, could'nt it?
+			return nil, status.Error(codes.AlreadyExists, "user already exists")
+		}
+		return nil, status.Error(codes.Internal, "internal error while creating user")
 	}
 
 	return &accountv1.CreateAccountResponse{}, nil

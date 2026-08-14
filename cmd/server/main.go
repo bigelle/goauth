@@ -1,17 +1,20 @@
 package main
 
 import (
+	"context"
 	"net"
 
+	"github.com/bigelle/auth/ent"
 	accountv1 "github.com/bigelle/auth/gen/account/v1"
 	authv1 "github.com/bigelle/auth/gen/auth/v1"
 	"github.com/bigelle/auth/internal/cache"
-	"github.com/bigelle/auth/internal/db"
 	"github.com/bigelle/auth/internal/service"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 func main() {
@@ -19,12 +22,20 @@ func main() {
 
 	// TODO: read a config from yaml(?)
 
+	dsn := "file:/tmp/app.db?cache=shared&_fk=1"
+
 	// FIXME: don't use hardcoded options
 	log.Info().Msg("setting up database")
-	log.Debug().Str("driver", db.SQLITE3_driver).Str("options", ":memory").Msg("database options")
-	db, err := db.NewDatabase(db.SQLITE3_driver, ":memory:")
+	log.Debug().Str("driver", "sqlite3").Str("options", dsn).Msg("database options")
+
+	db, err := ent.Open("sqlite3", dsn)
 	if err != nil {
 		log.Fatal().AnErr("database error", err).Msg("error opening database connection")
+	}
+	defer db.Close()
+
+	if err := db.Schema.Create(context.Background()); err != nil {
+		log.Fatal().AnErr("database error", err).Msg("failed migrating schema")
 	}
 
 	// FIXME: don't use hardcoded options
@@ -34,6 +45,7 @@ func main() {
 	if err != nil {
 		log.Fatal().AnErr("cache error", err).Msg("error opening cache connection")
 	}
+	defer c.Close()
 
 	// FIXME: don't use hardcoded options
 	log.Info().Int("port", 50051).Msg("opening socket on port")

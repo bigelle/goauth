@@ -2,13 +2,14 @@ package service
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"time"
 
+	"github.com/bigelle/auth/ent"
+	"github.com/bigelle/auth/ent/user"
 	authv1 "github.com/bigelle/auth/gen/auth/v1"
 	"github.com/bigelle/auth/internal/cache"
 	"github.com/bigelle/auth/internal/crypt"
-	"github.com/bigelle/auth/internal/db"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
@@ -16,20 +17,20 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func NewAuthService(db db.Database, cache cache.Cache) *AuthService {
+func NewAuthService(db *ent.Client, cache cache.Cache) *AuthService {
 	return &AuthService{db: db, cache: cache}
 }
 
 type AuthService struct {
 	authv1.UnimplementedAuthServiceServer
 	cache cache.Cache
-	db    db.Database
+	db    *ent.Client
 }
 
 func (s *AuthService) AuthenticateAccount(c context.Context, req *authv1.AuthenticateAccountRequest) (*authv1.AuthenticateAccountResponse, error) {
 	var (
-		user *db.User
-		err  error
+		u   *ent.User
+		err error
 	)
 
 	ctx, cancel := context.WithTimeout(c, 30*time.Second)
@@ -37,31 +38,30 @@ func (s *AuthService) AuthenticateAccount(c context.Context, req *authv1.Authent
 
 	switch req.Credential.(type) {
 	case *authv1.AuthenticateAccountRequest_Email:
-		user, err = s.db.GetUserByEmail(ctx, req.GetEmail())
+		u, err = s.db.User.Query().Where(user.Email(req.GetEmail())).Only(ctx)
 
 	case *authv1.AuthenticateAccountRequest_Username:
-		user, err = s.db.GetUserByName(ctx, req.GetUsername())
+		u, err = s.db.User.Query().Where(user.Name(req.GetUsername())).Only(ctx)
 
 	case nil:
 		return nil, status.Error(codes.InvalidArgument, "login credentials are required")
 	}
 
 	if err != nil {
-		if errors.Is(err, db.ErrNotFound) {
+		if ent.IsNotFound(err) {
 			return nil, status.Error(codes.NotFound, "user not found")
 		}
-		// TODO: check for timeouts
 		return nil, status.Error(codes.Internal, "unable to make request to database")
 	}
 
-	if !crypt.VerifyPassword(req.Password, user.PasswordHash) {
+	if !crypt.VerifyPassword(req.Password, u.PasswordHash) {
 		return nil, status.Error(codes.Unauthenticated, "wrong username, email or password")
 	}
 
 	authCode := crypt.MakeAuthCode()
 
 	if err := s.cache.StoreAuthContext(ctx, authCode, &cache.AuthContext{
-		UserID:        user.UUID,
+		UserID:        u.ID,
 		CodeChallenge: req.GetChallenge(),
 	}); err != nil {
 		// TODO: check for conflicts(?)
