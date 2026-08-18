@@ -2,10 +2,10 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/bigelle/auth/ent"
+	"github.com/bigelle/auth/ent/refreshtoken"
 	"github.com/bigelle/auth/ent/user"
 	authv1 "github.com/bigelle/auth/gen/auth/v1"
 	"github.com/bigelle/auth/internal/cache"
@@ -93,12 +93,13 @@ func (s *AuthService) ExchangeAuthCode(c context.Context, req *authv1.ExchangeAu
 	}
 
 	now := time.Now()
+	exp := now.Add(30 * 24 * time.Hour) // FIXME: read it from config
 
 	claims := jwt.MapClaims{
 		"sub": authCtx.UserID,
 		"iat": jwt.NewNumericDate(now),
 		"nbf": jwt.NewNumericDate(now),
-		"exp": jwt.NewNumericDate(now.Add(30 * 24 * time.Hour)), // FIXME: read it from config
+		"exp": jwt.NewNumericDate(exp),
 		"jti": uuid.Must(uuid.NewV7()).String(),
 		// private claims:
 		// FIXME: currently claims are only using user UUID
@@ -115,5 +116,54 @@ func (s *AuthService) ExchangeAuthCode(c context.Context, req *authv1.ExchangeAu
 		return nil, status.Error(codes.Internal, "can not sign JWT token")
 	}
 
-	return &authv1.ExchangeAuthCodeResponse{AccessCode: tokenStr}, nil
+	// TODO: neeed to generate refresh token as UUID and store it in DB
+	refresh := uuid.Must(uuid.NewV7())
+	refreshID := uuid.Must(uuid.NewV7())
+
+	tx, err := s.db.Tx(ctx)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "can not begin jwt transaction")
+	}
+
+	oldToken, err := tx.RefreshToken.Query().Where(
+		refreshtoken.HasOwnerWith(user.ID(authCtx.UserID)),
+		refreshtoken.Not(refreshtoken.RevokedAtGTE(now)),
+	).Only(ctx)
+
+	if err != nil {
+		if !ent.IsNotFound(err) {
+			// FIXME:
+			tx.Rollback()
+			return nil, status.Error(codes.Internal, "idk fix me later")
+		}
+	}
+
+	if oldToken != nil {
+		if err = oldToken.Update().SetRevokedAt(now).Exec(ctx); err != nil {
+			tx.Rollback()
+			return nil, status.Error(codes.Internal, "can not revoke old jwt token")
+		}
+	}
+
+	err = tx.RefreshToken.Create().
+		SetID(refreshID.String()).
+		// FIXME: hash it
+		SetTokenHash(refresh.String()).
+		SetOwnerID(authCtx.UserID).
+		//FIXME: implement family id
+		SetFamilyID("no use").
+		SetCreatedAt(now).
+		SetExpiresAt(exp).
+		Exec(ctx)
+	if err != nil {
+		tx.Rollback()
+		return nil, status.Error(codes.Internal, "can not store new jwt token")
+	}
+
+	tx.Commit()
+
+	return &authv1.ExchangeAuthCodeResponse{
+		AccessToken:  tokenStr,
+		RefreshToken: refresh.String(),
+	}, nil
 }

@@ -217,10 +217,12 @@ func (x *ExchangeAuthCodeRequest) GetVerifier() string {
 }
 
 type ExchangeAuthCodeResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	AccessCode    string                 `protobuf:"bytes,1,opt,name=access_code,json=accessCode,proto3" json:"access_code,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	AccessToken      string                 `protobuf:"bytes,1,opt,name=access_token,json=accessToken,proto3" json:"access_token,omitempty"`
+	RefreshToken     string                 `protobuf:"bytes,2,opt,name=refresh_token,json=refreshToken,proto3" json:"refresh_token,omitempty"`
+	ExpiresInSeconds int64                  `protobuf:"varint,3,opt,name=expires_in_seconds,json=expiresInSeconds,proto3" json:"expires_in_seconds,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *ExchangeAuthCodeResponse) Reset() {
@@ -253,11 +255,129 @@ func (*ExchangeAuthCodeResponse) Descriptor() ([]byte, []int) {
 	return file_auth_v1_messages_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *ExchangeAuthCodeResponse) GetAccessCode() string {
+func (x *ExchangeAuthCodeResponse) GetAccessToken() string {
 	if x != nil {
-		return x.AccessCode
+		return x.AccessToken
 	}
 	return ""
+}
+
+func (x *ExchangeAuthCodeResponse) GetRefreshToken() string {
+	if x != nil {
+		return x.RefreshToken
+	}
+	return ""
+}
+
+func (x *ExchangeAuthCodeResponse) GetExpiresInSeconds() int64 {
+	if x != nil {
+		return x.ExpiresInSeconds
+	}
+	return 0
+}
+
+type RefreshAccessTokenRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RefreshToken  string                 `protobuf:"bytes,1,opt,name=refresh_token,json=refreshToken,proto3" json:"refresh_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RefreshAccessTokenRequest) Reset() {
+	*x = RefreshAccessTokenRequest{}
+	mi := &file_auth_v1_messages_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RefreshAccessTokenRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RefreshAccessTokenRequest) ProtoMessage() {}
+
+func (x *RefreshAccessTokenRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_auth_v1_messages_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RefreshAccessTokenRequest.ProtoReflect.Descriptor instead.
+func (*RefreshAccessTokenRequest) Descriptor() ([]byte, []int) {
+	return file_auth_v1_messages_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *RefreshAccessTokenRequest) GetRefreshToken() string {
+	if x != nil {
+		return x.RefreshToken
+	}
+	return ""
+}
+
+type RefreshAccessTokenResponse struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	AccessToken      string                 `protobuf:"bytes,1,opt,name=access_token,json=accessToken,proto3" json:"access_token,omitempty"`
+	RefreshToken     string                 `protobuf:"bytes,2,opt,name=refresh_token,json=refreshToken,proto3" json:"refresh_token,omitempty"`
+	ExpiresInSeconds int64                  `protobuf:"varint,3,opt,name=expires_in_seconds,json=expiresInSeconds,proto3" json:"expires_in_seconds,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *RefreshAccessTokenResponse) Reset() {
+	*x = RefreshAccessTokenResponse{}
+	mi := &file_auth_v1_messages_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RefreshAccessTokenResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RefreshAccessTokenResponse) ProtoMessage() {}
+
+func (x *RefreshAccessTokenResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_auth_v1_messages_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RefreshAccessTokenResponse.ProtoReflect.Descriptor instead.
+func (*RefreshAccessTokenResponse) Descriptor() ([]byte, []int) {
+	return file_auth_v1_messages_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *RefreshAccessTokenResponse) GetAccessToken() string {
+	if x != nil {
+		return x.AccessToken
+	}
+	return ""
+}
+
+func (x *RefreshAccessTokenResponse) GetRefreshToken() string {
+	if x != nil {
+		return x.RefreshToken
+	}
+	return ""
+}
+
+func (x *RefreshAccessTokenResponse) GetExpiresInSeconds() int64 {
+	if x != nil {
+		return x.ExpiresInSeconds
+	}
+	return 0
 }
 
 var File_auth_v1_messages_proto protoreflect.FileDescriptor
@@ -278,10 +398,17 @@ const file_auth_v1_messages_proto_rawDesc = "" +
 	"_auth_code\"I\n" +
 	"\x17ExchangeAuthCodeRequest\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\tR\x04code\x12\x1a\n" +
-	"\bverifier\x18\x02 \x01(\tR\bverifier\";\n" +
-	"\x18ExchangeAuthCodeResponse\x12\x1f\n" +
-	"\vaccess_code\x18\x01 \x01(\tR\n" +
-	"accessCodeB/Z-github.com/bigelle/auth/gen/go/auth/v1;authv1b\x06proto3"
+	"\bverifier\x18\x02 \x01(\tR\bverifier\"\x90\x01\n" +
+	"\x18ExchangeAuthCodeResponse\x12!\n" +
+	"\faccess_token\x18\x01 \x01(\tR\vaccessToken\x12#\n" +
+	"\rrefresh_token\x18\x02 \x01(\tR\frefreshToken\x12,\n" +
+	"\x12expires_in_seconds\x18\x03 \x01(\x03R\x10expiresInSeconds\"@\n" +
+	"\x19RefreshAccessTokenRequest\x12#\n" +
+	"\rrefresh_token\x18\x01 \x01(\tR\frefreshToken\"\x92\x01\n" +
+	"\x1aRefreshAccessTokenResponse\x12!\n" +
+	"\faccess_token\x18\x01 \x01(\tR\vaccessToken\x12#\n" +
+	"\rrefresh_token\x18\x02 \x01(\tR\frefreshToken\x12,\n" +
+	"\x12expires_in_seconds\x18\x03 \x01(\x03R\x10expiresInSecondsB/Z-github.com/bigelle/auth/gen/go/auth/v1;authv1b\x06proto3"
 
 var (
 	file_auth_v1_messages_proto_rawDescOnce sync.Once
@@ -295,12 +422,14 @@ func file_auth_v1_messages_proto_rawDescGZIP() []byte {
 	return file_auth_v1_messages_proto_rawDescData
 }
 
-var file_auth_v1_messages_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_auth_v1_messages_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_auth_v1_messages_proto_goTypes = []any{
 	(*AuthenticateAccountRequest)(nil),  // 0: auth.v1.AuthenticateAccountRequest
 	(*AuthenticateAccountResponse)(nil), // 1: auth.v1.AuthenticateAccountResponse
 	(*ExchangeAuthCodeRequest)(nil),     // 2: auth.v1.ExchangeAuthCodeRequest
 	(*ExchangeAuthCodeResponse)(nil),    // 3: auth.v1.ExchangeAuthCodeResponse
+	(*RefreshAccessTokenRequest)(nil),   // 4: auth.v1.RefreshAccessTokenRequest
+	(*RefreshAccessTokenResponse)(nil),  // 5: auth.v1.RefreshAccessTokenResponse
 }
 var file_auth_v1_messages_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -326,7 +455,7 @@ func file_auth_v1_messages_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_auth_v1_messages_proto_rawDesc), len(file_auth_v1_messages_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

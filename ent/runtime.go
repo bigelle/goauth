@@ -5,6 +5,7 @@ package ent
 import (
 	"time"
 
+	"github.com/bigelle/auth/ent/refreshtoken"
 	"github.com/bigelle/auth/ent/schema"
 	"github.com/bigelle/auth/ent/user"
 )
@@ -13,6 +14,24 @@ import (
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	refreshtokenFields := schema.RefreshToken{}.Fields()
+	_ = refreshtokenFields
+	// refreshtokenDescTokenHash is the schema descriptor for token_hash field.
+	refreshtokenDescTokenHash := refreshtokenFields[1].Descriptor()
+	// refreshtoken.TokenHashValidator is a validator for the "token_hash" field. It is called by the builders before save.
+	refreshtoken.TokenHashValidator = refreshtokenDescTokenHash.Validators[0].(func(string) error)
+	// refreshtokenDescFamilyID is the schema descriptor for family_id field.
+	refreshtokenDescFamilyID := refreshtokenFields[2].Descriptor()
+	// refreshtoken.FamilyIDValidator is a validator for the "family_id" field. It is called by the builders before save.
+	refreshtoken.FamilyIDValidator = refreshtokenDescFamilyID.Validators[0].(func(string) error)
+	// refreshtokenDescCreatedAt is the schema descriptor for created_at field.
+	refreshtokenDescCreatedAt := refreshtokenFields[3].Descriptor()
+	// refreshtoken.DefaultCreatedAt holds the default value on creation for the created_at field.
+	refreshtoken.DefaultCreatedAt = refreshtokenDescCreatedAt.Default.(func() time.Time)
+	// refreshtokenDescID is the schema descriptor for id field.
+	refreshtokenDescID := refreshtokenFields[0].Descriptor()
+	// refreshtoken.IDValidator is a validator for the "id" field. It is called by the builders before save.
+	refreshtoken.IDValidator = refreshtokenDescID.Validators[0].(func(string) error)
 	userFields := schema.User{}.Fields()
 	_ = userFields
 	// userDescName is the schema descriptor for name field.
