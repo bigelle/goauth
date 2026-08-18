@@ -1,0 +1,50 @@
+services:
+  service:
+    build: ..                      # repo root — where the service's own Dockerfile lives
+    depends_on:
+      - redis-server
+    ports:
+      - "50051:50051"
+    environment:
+      # Same query params as the hardcoded dev DSN, just pointing at the
+      # mounted volume instead of /tmp (which isn't shared with `tests`).
+      DATABASE_URL: "file:/app/data/app.db?cache=shared&_fk=1"
+    volumes:
+      - db-data:/app/data          # sqlite file lives here — adjust to your real path
+    healthcheck:
+      # Plain TCP check via netcat (installed in the runtime image, see Dockerfile).
+      # Confirms the port is open, not that the grpc service itself is healthy —
+      # good enough to gate test startup. Swap for grpc_health_probe if your
+      # service registers the standard grpc.health.v1.Health service.
+      test: ["CMD-SHELL", "nc -z localhost 50051 || exit 1"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+
+  tests:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      service:
+        condition: service_healthy
+    environment:
+      GRPC_ADDR: service:50051
+      GRPC_ACCOUNT_SERVICE: account.v1.AccountService
+      GRPC_AUTH_SERVICE: auth.v1.AuthService
+      SQLITE_PATH: /app/data/app.db
+    volumes:
+      - db-data:/app/data
+
+  redis-server:
+    image: redis:7-alpine
+    container_name: redis_cache
+    ports:
+      - "6379:6379" 
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+
+volumes:
+  db-data:
+  redis-data:

@@ -1,0 +1,27 @@
+# Move this file to <repo-root>/.github/workflows/e2e.yml
+
+name: e2e
+
+on: [push, pull_request]
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run e2e suite
+        working-directory: e2e
+        run: |
+          docker compose up -d --build service
+          docker compose run --rm tests
+
+      - name: Collect service logs on failure
+        if: failure()
+        working-directory: e2e
+        run: docker compose logs
+
+      - name: Tear down
+        if: always()
+        working-directory: e2e
+        run: docker compose down -v

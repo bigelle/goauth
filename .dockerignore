@@ -1,0 +1,5 @@
+e2e/
+.git/
+.github/
+*.md
+.dockerignore

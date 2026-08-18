@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"net"
+	"os"
 
 	"github.com/bigelle/auth/ent"
 	accountv1 "github.com/bigelle/auth/gen/account/v1"
@@ -22,7 +23,10 @@ func main() {
 
 	// TODO: read a config from yaml(?)
 
-	dsn := "file:/tmp/app.db?cache=shared&_fk=1"
+	dsn := os.Getenv("DATABASE_URL")
+	if dsn == "" {
+		dsn = "file:/tmp/app.db?cache=shared&_fk=1" // текущий дефолт остаётся как есть для локального go run
+	}
 
 	// FIXME: don't use hardcoded options
 	log.Info().Msg("setting up database")

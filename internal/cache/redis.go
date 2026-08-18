@@ -10,7 +10,7 @@ import (
 
 func newRedisCache() (*RedisCache, error) {
 	rdb := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
+		Addr:     "redis-server:6379",
 		Password: "",
 		DB:       0,
 		Protocol: 2,
