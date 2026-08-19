@@ -45,3 +45,22 @@ def test_create_authenticate_exchange_flow(grpc_client, db, create_exchange_auth
         (exchange_resp["refresh_token"],),
     )
     assert row is not None, "No matching row appeared in sqlite after exchange"
+
+    refresh_resp = grpc_client.request(AUTH_SERVICE, "RefreshAccessToken", {
+        "refresh_token": exchange_resp["refresh_token"],
+    })
+    assert refresh_resp, "RefreshAccessToken returned an empty response"
+
+    row = wait_for_row(
+        db,
+        "SELECT * FROM refresh_tokens WHERE token_hash = ?",
+        (refresh_resp["refresh_token"],),
+    )
+    assert row is not None, "No matching row appeared in sqlite after exchange"
+
+    row = wait_for_row(
+        db,
+        "SELECT * FROM refresh_tokens WHERE token_hash = ?",
+        (exchange_resp["refresh_token"],),
+    )
+    assert row["revoked_at"] is not None, "Old refresh token is not revoked"
