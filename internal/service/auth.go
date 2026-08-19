@@ -12,7 +12,6 @@ import (
 	"github.com/bigelle/auth/internal/crypt"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
-	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -162,10 +161,11 @@ func (s *AuthService) RefreshAccessToken(c context.Context, req *authv1.RefreshA
 		return nil, status.Error(codes.Internal, "can not begin transaction in refresh_tokens table")
 	}
 
-	old, err := tx.RefreshToken.Query().Where(
+	old, err := tx.RefreshToken.Query().
 		// FIXME: hash it
-		refreshtoken.TokenHash(req.RefreshToken),
-	).Only(ctx)
+		Where(refreshtoken.TokenHash(req.RefreshToken)).
+		WithOwner().
+		Only(ctx)
 	if err != nil {
 		return nil, status.Error(codes.Unauthenticated, "refresh token not found")
 	}
