@@ -95,34 +95,18 @@ func (s *AuthService) ExchangeAuthCode(c context.Context, req *authv1.ExchangeAu
 	now := time.Now()
 	exp := now.Add(30 * 24 * time.Hour) // FIXME: read it from config
 
-	claims := jwt.MapClaims{
-		"sub": authCtx.UserID,
-		"iat": jwt.NewNumericDate(now),
-		"nbf": jwt.NewNumericDate(now),
-		"exp": jwt.NewNumericDate(exp),
-		"jti": uuid.Must(uuid.NewV7()).String(),
-		// private claims:
-		// FIXME: currently claims are only using user UUID
-		// but in the future there would also be something else
-		// so don't forget to use it too
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
 	// FIXME: read key from config or env
-	tokenStr, err := token.SignedString([]byte("SECRET"))
+	access, err := makeJwt(authCtx.UserID, now, exp)
 	if err != nil {
-		log.Err(err).Msg("error signing jwt token")
 		return nil, status.Error(codes.Internal, "can not sign JWT token")
 	}
 
-	// TODO: neeed to generate refresh token as UUID and store it in DB
 	refresh := uuid.Must(uuid.NewV7())
 	refreshID := uuid.Must(uuid.NewV7())
 
 	tx, err := s.db.Tx(ctx)
 	if err != nil {
-		return nil, status.Error(codes.Internal, "can not begin jwt transaction")
+		return nil, status.Error(codes.Internal, "can not begin transaction in refresh_tokens table")
 	}
 
 	oldToken, err := tx.RefreshToken.Query().Where(
@@ -163,7 +147,103 @@ func (s *AuthService) ExchangeAuthCode(c context.Context, req *authv1.ExchangeAu
 	tx.Commit()
 
 	return &authv1.ExchangeAuthCodeResponse{
-		AccessToken:  tokenStr,
-		RefreshToken: refresh.String(),
+		AccessToken:      access,
+		RefreshToken:     refresh.String(),
+		ExpiresInSeconds: int64(30 * 24 * time.Hour),
 	}, nil
+}
+
+func (s *AuthService) RefreshAccessToken(c context.Context, req *authv1.RefreshAccessTokenRequest) (*authv1.RefreshAccessTokenResponse, error) {
+	ctx, cancel := context.WithTimeout(c, 30*time.Second)
+	defer cancel()
+
+	tx, err := s.db.Tx(ctx)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "can not begin transaction in refresh_tokens table")
+	}
+
+	old, err := tx.RefreshToken.Query().Where(
+		// FIXME: hash it
+		refreshtoken.TokenHash(req.RefreshToken),
+	).Only(ctx)
+	if err != nil {
+		return nil, status.Error(codes.Unauthenticated, "refresh token not found")
+	}
+
+	if old.RevokedAt != nil {
+		// TODO:
+		// 1. revoke whole token family
+		// 2. no matter what, return unauthorized
+		return nil, status.Error(codes.Unauthenticated, "this token is revoked")
+	}
+
+	now := time.Now()
+	if old.ExpiresAt.Before(now) {
+		return nil, status.Error(codes.Unauthenticated, "this token is revoked")
+	}
+
+	// FIXME: read from config
+	exp := now.Add(30 * 24 * time.Hour)
+
+	access, err := makeJwt(old.Edges.Owner.ID, now, exp)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "can not sign JWT token")
+	}
+
+	err = tx.RefreshToken.Update().
+		Where(refreshtoken.TokenHash(req.RefreshToken)).
+		SetRevokedAt(now).
+		Exec(ctx)
+	if err != nil {
+		tx.Rollback()
+		return nil, status.Error(codes.Internal, "can not revoke old refresh token")
+	}
+
+	refresh := uuid.Must(uuid.NewV7())
+	refreshID := uuid.Must(uuid.NewV7())
+
+	err = tx.RefreshToken.Create().
+		SetID(refreshID.String()).
+		SetTokenHash(refresh.String()).
+		SetFamilyID(old.FamilyID).
+		SetOwnerID(old.Edges.Owner.ID).
+		SetCreatedAt(now).
+		SetExpiresAt(exp).
+		Exec(ctx)
+	if err != nil {
+		tx.Rollback()
+		return nil, status.Error(codes.Internal, "can not post new refresh token")
+	}
+
+	tx.Commit()
+
+	return &authv1.RefreshAccessTokenResponse{
+		AccessToken:      access,
+		RefreshToken:     refresh.String(),
+		ExpiresInSeconds: int64(30 * 24 * time.Hour),
+	}, nil
+}
+
+func makeJwt(userID string, now, exp time.Time) (string, error) {
+	claims := jwt.MapClaims{
+		"sub": userID,
+		"iat": jwt.NewNumericDate(now),
+		"nbf": jwt.NewNumericDate(now),
+		"exp": jwt.NewNumericDate(exp),
+		"jti": uuid.Must(uuid.NewV7()).String(),
+		// private claims:
+		// FIXME: currently claims are only using user UUID
+		// but in the future there would also be something else
+		// so don't forget to use it too
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	// FIXME: read key from config or env
+	tokenStr, err := token.SignedString([]byte("SECRET"))
+	if err != nil {
+		return "", status.Error(codes.Internal, "can not sign JWT token")
+	}
+
+	return tokenStr, nil
 }
