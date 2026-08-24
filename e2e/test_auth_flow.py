@@ -37,6 +37,8 @@ def test_create_authenticate_exchange_flow(grpc_client, db, create_exchange_auth
         "verifier": create_exchange_authenticate_flow_data["verifier"],
     })
     assert exchange_resp, "ExchangeAuthCode returned an empty response"
+    assert exchange_resp["refresh_token"], "ExchangeAuthCode returned no refresh token"
+    assert exchange_resp["access_token"], "ExchangeAuthCode returned no access token"
 
     # 4. Verify the record landed in sqlite — adjust table/column names
     row = wait_for_row(

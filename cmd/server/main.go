@@ -33,6 +33,7 @@ func main() {
 	log.Debug().Str("driver", "sqlite3").Str("options", dsn).Msg("database options")
 
 	db, err := ent.Open("sqlite3", dsn)
+	db = db.Debug()
 	if err != nil {
 		log.Fatal().AnErr("database error", err).Msg("error opening database connection")
 	}
