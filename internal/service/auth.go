@@ -27,25 +27,12 @@ type AuthService struct {
 }
 
 func (s *AuthService) AuthenticateAccount(c context.Context, req *authv1.AuthenticateAccountRequest) (*authv1.AuthenticateAccountResponse, error) {
-	var (
-		u   *ent.User
-		err error
-	)
-
 	ctx, cancel := context.WithTimeout(c, 30*time.Second)
 	defer cancel()
 
-	switch req.Credential.(type) {
-	case *authv1.AuthenticateAccountRequest_Email:
-		u, err = s.db.User.Query().Where(user.Email(req.GetEmail())).Only(ctx)
+	authCode := crypt.MakeAuthCode()
 
-	case *authv1.AuthenticateAccountRequest_Username:
-		u, err = s.db.User.Query().Where(user.Name(req.GetUsername())).Only(ctx)
-
-	case nil:
-		return nil, status.Error(codes.InvalidArgument, "login credentials are required")
-	}
-
+	u, err := s.QueryUser(ctx, req)
 	if err != nil {
 		if ent.IsNotFound(err) {
 			return nil, status.Error(codes.NotFound, "user not found")
@@ -56,8 +43,6 @@ func (s *AuthService) AuthenticateAccount(c context.Context, req *authv1.Authent
 	if !crypt.VerifyPassword(req.Password, u.PasswordHash) {
 		return nil, status.Error(codes.Unauthenticated, "wrong username, email or password")
 	}
-
-	authCode := crypt.MakeAuthCode()
 
 	if err := s.cache.StoreAuthContext(ctx, authCode, &cache.AuthContext{
 		UserID:        u.ID,
@@ -76,6 +61,10 @@ func (s *AuthService) ExchangeAuthCode(c context.Context, req *authv1.ExchangeAu
 	ctx, cancel := context.WithTimeout(c, 30*time.Second)
 	defer cancel()
 
+	now := time.Now()
+	expIn := s.RefreshTokenExpiresIn()
+	expAt := now.Add(expIn)
+
 	// NOTE: maybe I should use GET instead of GETDEL
 	// because there's 2 (or 3) points where there could be an internal error
 	// and the token would be lost.
@@ -91,29 +80,27 @@ func (s *AuthService) ExchangeAuthCode(c context.Context, req *authv1.ExchangeAu
 		return nil, status.Error(codes.Unauthenticated, "can not solve challenge with given verifier")
 	}
 
-	now := time.Now()
-	exp := now.Add(30 * 24 * time.Hour) // FIXME: read it from config
-
 	// FIXME: read key from config or env
-	access, err := makeJwt(authCtx.UserID, now, exp)
+	access, err := makeJwt(authCtx.UserID, now, expAt)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "can not sign JWT token")
 	}
 
-	refresh := uuid.Must(uuid.NewV7())
-	refreshID := uuid.Must(uuid.NewV7())
+	refresh := uuid.Must(uuid.NewV7()).String()
+	refreshID := uuid.Must(uuid.NewV7()).String()
 
 	tx, err := s.db.Tx(ctx)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "can not begin transaction in refresh_tokens table")
 	}
 
-	oldToken, err := tx.RefreshToken.Query().Where(
-		refreshtoken.HasOwnerWith(user.ID(authCtx.UserID)),
-		refreshtoken.Not(refreshtoken.RevokedAtGTE(now)),
-	).Only(ctx)
-
+	old, err := s.QueryRefreshTokenByOwnerTX(ctx, tx, QueryRefreshTokenParams{
+		OwnerID:       authCtx.UserID,
+		StillActiveAt: &now,
+	})
 	if err != nil {
+		// NotFoundError may be expected, if for example this is the first ever exchange request
+		// so the user never had any refresh tokens
 		if !ent.IsNotFound(err) {
 			// FIXME:
 			tx.Rollback()
@@ -121,23 +108,28 @@ func (s *AuthService) ExchangeAuthCode(c context.Context, req *authv1.ExchangeAu
 		}
 	}
 
-	if oldToken != nil {
-		if err = oldToken.Update().SetRevokedAt(now).Exec(ctx); err != nil {
+	// In case the user already has an active refresh token, it should be revoked first
+	if old != nil {
+		err = s.RevokeRefreshTokenTX(c, tx, RevokeRefreshTokenParams{
+			OldTokenHash: old.TokenHash,
+			RevokedAt:    now,
+		})
+		if err != nil {
 			tx.Rollback()
 			return nil, status.Error(codes.Internal, "can not revoke old jwt token")
 		}
 	}
 
-	err = tx.RefreshToken.Create().
-		SetID(refreshID.String()).
+	err = s.StoreRefreshTokenTX(ctx, tx, StoreRefreshTokenParams{
+		ID: refreshID,
 		// FIXME: hash it
-		SetTokenHash(refresh.String()).
-		SetOwnerID(authCtx.UserID).
-		//FIXME: implement family id
-		SetFamilyID("no use").
-		SetCreatedAt(now).
-		SetExpiresAt(exp).
-		Exec(ctx)
+		TokenHash: refresh,
+		OwnerID:   authCtx.UserID,
+		// FIXME:
+		FamilyID:  "no use",
+		CreatedAt: now,
+		ExpiresAt: expAt,
+	})
 	if err != nil {
 		tx.Rollback()
 		return nil, status.Error(codes.Internal, "can not store new jwt token")
@@ -147,8 +139,8 @@ func (s *AuthService) ExchangeAuthCode(c context.Context, req *authv1.ExchangeAu
 
 	return &authv1.ExchangeAuthCodeResponse{
 		AccessToken:      access,
-		RefreshToken:     refresh.String(),
-		ExpiresInSeconds: int64(30 * 24 * time.Hour),
+		RefreshToken:     refresh,
+		ExpiresInSeconds: int64(expIn),
 	}, nil
 }
 
@@ -156,19 +148,25 @@ func (s *AuthService) RefreshAccessToken(c context.Context, req *authv1.RefreshA
 	ctx, cancel := context.WithTimeout(c, 30*time.Second)
 	defer cancel()
 
+	now := time.Now()
+	expIn := s.RefreshTokenExpiresIn()
+	expAt := now.Add(expIn)
+
 	tx, err := s.db.Tx(ctx)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "can not begin transaction in refresh_tokens table")
 	}
 
-	old, err := tx.RefreshToken.Query().
+	old, err := s.QueryRefreshTokenByTokenHashTX(ctx, tx, QueryRefreshTokenParams{
 		// FIXME: hash it
-		Where(refreshtoken.TokenHash(req.RefreshToken)).
-		WithOwner().
-		Only(ctx)
+		TokenHash: req.RefreshToken,
+		WithOwner: true,
+	})
 	if err != nil {
+		tx.Rollback()
 		return nil, status.Error(codes.Unauthenticated, "refresh token not found")
 	}
+	ownerID := old.Edges.Owner.ID
 
 	if old.RevokedAt != nil {
 		// TODO:
@@ -177,39 +175,36 @@ func (s *AuthService) RefreshAccessToken(c context.Context, req *authv1.RefreshA
 		return nil, status.Error(codes.Unauthenticated, "this token is revoked")
 	}
 
-	now := time.Now()
 	if old.ExpiresAt.Before(now) {
 		return nil, status.Error(codes.Unauthenticated, "this token is revoked")
 	}
 
-	// FIXME: read from config
-	exp := now.Add(30 * 24 * time.Hour)
-
-	access, err := makeJwt(old.Edges.Owner.ID, now, exp)
+	access, err := makeJwt(ownerID, now, expAt)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "can not sign JWT token")
 	}
 
-	err = tx.RefreshToken.Update().
-		Where(refreshtoken.TokenHash(req.RefreshToken)).
-		SetRevokedAt(now).
-		Exec(ctx)
+	err = s.RevokeRefreshTokenTX(ctx, tx, RevokeRefreshTokenParams{
+		OldTokenHash: old.TokenHash,
+		RevokedAt:    now,
+	})
 	if err != nil {
 		tx.Rollback()
-		return nil, status.Error(codes.Internal, "can not revoke old refresh token")
+		return nil, status.Error(codes.Internal, "unable to revoke old refresh token")
 	}
 
-	refresh := uuid.Must(uuid.NewV7())
-	refreshID := uuid.Must(uuid.NewV7())
+	refresh := uuid.Must(uuid.NewV7()).String()
+	refreshID := uuid.Must(uuid.NewV7()).String()
 
-	err = tx.RefreshToken.Create().
-		SetID(refreshID.String()).
-		SetTokenHash(refresh.String()).
-		SetFamilyID(old.FamilyID).
-		SetOwnerID(old.Edges.Owner.ID).
-		SetCreatedAt(now).
-		SetExpiresAt(exp).
-		Exec(ctx)
+	err = s.StoreRefreshTokenTX(ctx, tx, StoreRefreshTokenParams{
+		ID: refreshID,
+		// FIXME: hash it
+		TokenHash: refresh,
+		OwnerID:   ownerID,
+		FamilyID:  old.FamilyID,
+		CreatedAt: now,
+		ExpiresAt: expAt,
+	})
 	if err != nil {
 		tx.Rollback()
 		return nil, status.Error(codes.Internal, "can not post new refresh token")
@@ -219,9 +214,90 @@ func (s *AuthService) RefreshAccessToken(c context.Context, req *authv1.RefreshA
 
 	return &authv1.RefreshAccessTokenResponse{
 		AccessToken:      access,
-		RefreshToken:     refresh.String(),
-		ExpiresInSeconds: int64(30 * 24 * time.Hour),
+		RefreshToken:     refresh,
+		ExpiresInSeconds: int64(expIn),
 	}, nil
+}
+
+func (s *AuthService) QueryUser(c context.Context, req *authv1.AuthenticateAccountRequest) (*ent.User, error) {
+	switch req.Credential.(type) {
+	case *authv1.AuthenticateAccountRequest_Email:
+		return s.db.User.Query().Where(user.Email(req.GetEmail())).Only(c)
+
+	case *authv1.AuthenticateAccountRequest_Username:
+		return s.db.User.Query().Where(user.Name(req.GetUsername())).Only(c)
+	}
+	return nil, status.Error(codes.InvalidArgument, "login credentials are required")
+}
+
+type StoreRefreshTokenParams struct {
+	ID        string
+	TokenHash string
+	FamilyID  string
+	OwnerID   string
+	CreatedAt time.Time
+	ExpiresAt time.Time
+}
+
+func (s *AuthService) StoreRefreshTokenTX(c context.Context, tx *ent.Tx, params StoreRefreshTokenParams) error {
+	return tx.RefreshToken.Create().
+		SetID(params.ID).
+		SetTokenHash(params.TokenHash).
+		SetFamilyID(params.FamilyID).
+		SetOwnerID(params.OwnerID).
+		SetCreatedAt(params.CreatedAt).
+		SetExpiresAt(params.ExpiresAt).
+		Exec(c)
+}
+
+type RevokeRefreshTokenParams struct {
+	OldTokenHash string
+	RevokedAt    time.Time
+}
+
+func (s *AuthService) RevokeRefreshTokenTX(c context.Context, tx *ent.Tx, params RevokeRefreshTokenParams) error {
+	return tx.RefreshToken.Update().
+		Where(refreshtoken.TokenHash(params.OldTokenHash)).
+		SetRevokedAt(params.RevokedAt).
+		Exec(c)
+}
+
+type QueryRefreshTokenParams struct {
+	OwnerID       string
+	TokenHash     string
+	StillActiveAt *time.Time
+	WithOwner     bool
+}
+
+func (s *AuthService) QueryRefreshTokenByOwnerTX(c context.Context, tx *ent.Tx, params QueryRefreshTokenParams) (*ent.RefreshToken, error) {
+	q := tx.RefreshToken.Query().
+		Where(refreshtoken.HasOwnerWith(user.ID(params.OwnerID)))
+
+	return s.queryRefreshTokenTX(c, q, params)
+}
+
+func (s *AuthService) QueryRefreshTokenByTokenHashTX(c context.Context, tx *ent.Tx, params QueryRefreshTokenParams) (*ent.RefreshToken, error) {
+	q := tx.RefreshToken.Query().
+		Where(refreshtoken.TokenHash(params.TokenHash))
+
+	return s.queryRefreshTokenTX(c, q, params)
+}
+
+func (s *AuthService) queryRefreshTokenTX(c context.Context, q *ent.RefreshTokenQuery, params QueryRefreshTokenParams) (*ent.RefreshToken, error) {
+	if params.StillActiveAt != nil {
+		q.Where(refreshtoken.Not(refreshtoken.RevokedAtGTE(*params.StillActiveAt)))
+	}
+
+	if params.WithOwner {
+		q.WithOwner()
+	}
+
+	return q.Only(c)
+}
+
+func (s *AuthService) RefreshTokenExpiresIn() time.Duration {
+	// FIXME: read from config
+	return 30 * 24 * time.Hour
 }
 
 func makeJwt(userID string, now, exp time.Time) (string, error) {
