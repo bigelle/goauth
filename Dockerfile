@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # ---- build stage ----
-FROM golang:1.26.5-bookworm AS build
+FROM golang:1.27-bookworm AS build
 WORKDIR /src
 
 # Cache module downloads separately from source changes
