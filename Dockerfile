@@ -5,12 +5,10 @@ FROM golang:1.27-alpine AS build
 WORKDIR /src
 
 # gcc + musl-dev needed for CGO (github.com/mattn/go-sqlite3)
-RUN --mount=type=cache,target=/var/cache/apk \
-    apk add --no-cache gcc musl-dev
+RUN apk add gcc musl-dev
 
 COPY go.mod go.sum ./
-RUN --mount=type=cache,target=/go/pkg/mod \
-    go mod download
+RUN go mod download
 
 COPY . .
 
@@ -20,8 +18,7 @@ COPY . .
 ENV CGO_ENABLED=1
 ENV GOOS=linux
 
-RUN --mount=type=cache,target=/go/pkg/mod \
-    --mount=type=cache,target=/root/.cache/go-build \
+RUN --mount=type=cache,target=/root/.cache/go-build \
     go build -trimpath -ldflags="-s -w" -o /out/server ./cmd/server
 
 # ---- runtime stage ----
