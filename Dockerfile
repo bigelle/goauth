@@ -32,7 +32,7 @@ FROM alpine:3.20 AS runtime
 # sqlite3 CLI is intentionally NOT installed here — install manually via
 # `apk add sqlite` when shelling in for debugging.
 RUN --mount=type=cache,target=/var/cache/apk \
-    apk add --no-cache ca-certificates netcat-openbsd
+    apk add ca-certificates netcat-openbsd
 
 RUN addgroup -S app && adduser -S app -G app
 
