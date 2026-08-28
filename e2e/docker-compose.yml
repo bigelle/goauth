@@ -1,5 +1,6 @@
 services:
   service:
+    image: e2e-service:latest
     build: ..                      # repo root — where the service's own Dockerfile lives
     depends_on:
       - redis-server
