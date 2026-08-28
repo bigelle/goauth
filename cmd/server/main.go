@@ -4,11 +4,13 @@ import (
 	"context"
 	"net"
 	"os"
+	"time"
 
 	"github.com/bigelle/auth/ent"
 	accountv1 "github.com/bigelle/auth/gen/account/v1"
 	authv1 "github.com/bigelle/auth/gen/auth/v1"
 	"github.com/bigelle/auth/internal/cache"
+	"github.com/bigelle/auth/internal/interceptor"
 	"github.com/bigelle/auth/internal/service"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -58,9 +60,12 @@ func main() {
 	if err != nil {
 		log.Fatal().AnErr("socket error", err).Msg("error opening tcp socket")
 	}
-	log.Info().Int("port", 50051).Msg("listening on port")
+	log.Info().Int("port", 50052).Msg("listening on port")
 
-	server := grpc.NewServer()
+	server := grpc.NewServer(
+		// FIXME: read timeout from config
+		grpc.UnaryInterceptor(interceptor.UnaryContextServerInterceptor(30 * time.Second)),
+	)
 
 	authService := service.NewAuthService(db, c)
 	authv1.RegisterAuthServiceServer(server, authService)

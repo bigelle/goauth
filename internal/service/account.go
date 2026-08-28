@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"time"
 
 	"github.com/bigelle/auth/ent"
 	accountv1 "github.com/bigelle/auth/gen/account/v1"
@@ -27,10 +26,7 @@ type AccountService struct {
 	db *ent.Client
 }
 
-func (s *AccountService) CreateAccount(c context.Context, req *accountv1.CreateAccountRequest) (*accountv1.CreateAccountResponse, error) {
-	ctx, cancel := context.WithTimeout(c, 30*time.Second)
-	defer cancel()
-
+func (s *AccountService) CreateAccount(ctx context.Context, req *accountv1.CreateAccountRequest) (*accountv1.CreateAccountResponse, error) {
 	pass, err := crypt.HashPassword(req.Password)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "unable to hash password")
