@@ -14,9 +14,9 @@ func UnaryContextServerInterceptor(d time.Duration) grpc.UnaryServerInterceptor 
 		info *grpc.UnaryServerInfo,
 		handler grpc.UnaryHandler,
 	) (resp any, err error) {
-		ctx, cancel := context.WithTimeout(ctx, d)
+		c, cancel := context.WithTimeout(ctx, d)
 		defer cancel()
 
-		return handler(ctx, req)
+		return handler(c, req)
 	}
 }

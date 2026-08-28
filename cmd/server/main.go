@@ -4,6 +4,7 @@ import (
 	"context"
 	"net"
 	"os"
+	"time"
 
 	"github.com/bigelle/auth/ent"
 	accountv1 "github.com/bigelle/auth/gen/account/v1"
@@ -63,7 +64,7 @@ func main() {
 
 	server := grpc.NewServer(
 		// FIXME: read timeout from config
-		grpc.UnaryInterceptor(interceptor.UnaryContextServerInterceptor(30)),
+		grpc.UnaryInterceptor(interceptor.UnaryContextServerInterceptor(30 * time.Second)),
 	)
 
 	authService := service.NewAuthService(db, c)
