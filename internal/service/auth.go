@@ -26,10 +26,7 @@ type AuthService struct {
 	db    *ent.Client
 }
 
-func (s *AuthService) AuthenticateAccount(c context.Context, req *authv1.AuthenticateAccountRequest) (*authv1.AuthenticateAccountResponse, error) {
-	ctx, cancel := context.WithTimeout(c, 30*time.Second)
-	defer cancel()
-
+func (s *AuthService) AuthenticateAccount(ctx context.Context, req *authv1.AuthenticateAccountRequest) (*authv1.AuthenticateAccountResponse, error) {
 	authCode := crypt.MakeAuthCode()
 
 	u, err := s.QueryUser(ctx, req)
@@ -57,10 +54,7 @@ func (s *AuthService) AuthenticateAccount(c context.Context, req *authv1.Authent
 	}, nil
 }
 
-func (s *AuthService) ExchangeAuthCode(c context.Context, req *authv1.ExchangeAuthCodeRequest) (*authv1.ExchangeAuthCodeResponse, error) {
-	ctx, cancel := context.WithTimeout(c, 30*time.Second)
-	defer cancel()
-
+func (s *AuthService) ExchangeAuthCode(ctx context.Context, req *authv1.ExchangeAuthCodeRequest) (*authv1.ExchangeAuthCodeResponse, error) {
 	now := time.Now()
 	expIn := s.RefreshTokenExpiresIn()
 	expAt := now.Add(expIn)
@@ -110,7 +104,7 @@ func (s *AuthService) ExchangeAuthCode(c context.Context, req *authv1.ExchangeAu
 
 	// In case the user already has an active refresh token, it should be revoked first
 	if old != nil {
-		err = s.RevokeRefreshTokenTX(c, tx, RevokeRefreshTokenParams{
+		err = s.RevokeRefreshTokenTX(ctx, tx, RevokeRefreshTokenParams{
 			OldTokenHash: old.TokenHash,
 			RevokedAt:    now,
 		})
@@ -144,10 +138,7 @@ func (s *AuthService) ExchangeAuthCode(c context.Context, req *authv1.ExchangeAu
 	}, nil
 }
 
-func (s *AuthService) RefreshAccessToken(c context.Context, req *authv1.RefreshAccessTokenRequest) (*authv1.RefreshAccessTokenResponse, error) {
-	ctx, cancel := context.WithTimeout(c, 30*time.Second)
-	defer cancel()
-
+func (s *AuthService) RefreshAccessToken(ctx context.Context, req *authv1.RefreshAccessTokenRequest) (*authv1.RefreshAccessTokenResponse, error) {
 	now := time.Now()
 	expIn := s.RefreshTokenExpiresIn()
 	expAt := now.Add(expIn)
