@@ -63,8 +63,11 @@ func main() {
 	log.Info().Int("port", 50052).Msg("listening on port")
 
 	server := grpc.NewServer(
-		// FIXME: read timeout from config
-		grpc.UnaryInterceptor(interceptor.UnaryContextServerInterceptor(30 * time.Second)),
+		grpc.ChainUnaryInterceptor(
+			// FIXME: read timeout from config
+			interceptor.UnaryContextServerInterceptor(30*time.Second),
+			interceptor.UnaryLoggingServerInterceptor(),
+		),
 	)
 
 	authService := service.NewAuthService(db, c)
