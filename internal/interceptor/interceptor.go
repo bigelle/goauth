@@ -53,3 +53,21 @@ func UnaryLoggingServerInterceptor() grpc.UnaryServerInterceptor {
 		return resp, err
 	}
 }
+
+func UnaryPanicServerInterceptor() grpc.UnaryServerInterceptor {
+	return func(ctx context.Context,
+		req any,
+		info *grpc.UnaryServerInfo,
+		handler grpc.UnaryHandler,
+	) (resp any, err error) {
+		defer func() {
+			if r := recover(); r != nil {
+				log.Error().Any("cause", r).Str("method", info.FullMethod).Msg("PANIC")
+			}
+		}()
+
+		resp, err = handler(ctx, req)
+
+		return resp, err
+	}
+}
