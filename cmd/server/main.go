@@ -64,9 +64,10 @@ func main() {
 
 	server := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
+			interceptor.UnaryPanicServerInterceptor(),
+			interceptor.UnaryLoggingServerInterceptor(),
 			// FIXME: read timeout from config
 			interceptor.UnaryContextServerInterceptor(30*time.Second),
-			interceptor.UnaryLoggingServerInterceptor(),
 		),
 	)
 
