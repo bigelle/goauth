@@ -27,7 +27,7 @@ func main() {
 
 	dsn := os.Getenv("DATABASE_URL")
 	if dsn == "" {
-		dsn = "file:/tmp/app.db?cache=shared&_fk=1" // текущий дефолт остаётся как есть для локального go run
+		dsn = "file:/tmp/app.db?cache=shared&_fk=1"
 	}
 
 	// FIXME: don't use hardcoded options

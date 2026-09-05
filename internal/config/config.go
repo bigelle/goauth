@@ -1,32 +1,115 @@
 package config
 
+import (
+	_ "embed"
+	"fmt"
+	"os"
+
+	"github.com/santhosh-tekuri/jsonschema/v6"
+	"github.com/spf13/viper"
+	"gopkg.in/yaml.v3"
+)
+
+const (
+	configSchemaResourceName = "config.schema.yaml"
+)
+
+//go:embed config.schema.yaml
+var embeddedJsonSchema []byte
+
+var (
+	schemaDoc interface{}
+	schema    *jsonschema.Schema
+)
+
+func init() {
+	var err error
+
+	if err = yaml.Unmarshal(embeddedJsonSchema, &schemaDoc); err != nil {
+		panic(err)
+	}
+	c := jsonschema.NewCompiler()
+	if err = c.AddResource("config.schema.yaml", schemaDoc); err != nil {
+		panic(err)
+	}
+
+	schema, err = c.Compile("config.schema.yaml")
+	if err != nil {
+		panic(err)
+	}
+
+}
+
 type Config struct {
-	Host  string
-	Port  int
-	DB    DatabaseConfig
-	Cache CacheConfig
+	Server ServerConfig `mapstructure:"server"`
 }
 
-// Specify only one of these options:
-type DatabaseConfig struct {
-	Sqlite3 *Sqlite3Config
-	// Postgresql *PosgresqlConfig
+type ServerConfig struct {
+	Host string `mapstructure:"host"`
+	Port int    `mapstructure:"port"`
 }
 
-type Sqlite3Config struct {
-	// Path to the .db file
-	// or ":memory:" for in-memory DB.
-	// Leave empty for temporary storing
-	Storage string `yaml:"storage"`
-	// "shared" for shared use
-	// or "private" for private use
-	CacheAccess string `yaml:"cache_access"`
-	// Pass true to enable Write Ahead of Logging
-	WAL bool `yaml:"wal"`
+func LoadConfig(file ...string) (*Config, error) {
+	v := viper.New()
+	v.SetConfigName("config")
+	v.SetConfigType("yaml")
+
+	setupDefaults(v)
+
+	cfgFile := "config.yaml"
+	if file != nil {
+		cfgFile = file[0]
+	}
+	v.SetConfigFile(cfgFile)
+
+	if err := v.ReadInConfig(); err != nil {
+		if !isMissingConfigFile(err) {
+			return nil, fmt.Errorf("error reading config file: %w", err)
+		}
+		if cfgFile != "" {
+			fmt.Println("using default config instead of", cfgFile)
+			fmt.Println("the error was:", err.Error())
+		}
+		return DefaultConfig(), nil
+	}
+
+	rawMap := v.AllSettings()
+
+	if err := schema.Validate(rawMap); err != nil {
+		return nil, fmt.Errorf("invalid config file: %w", err)
+	}
+
+	var cfg Config
+	if err := v.Unmarshal(&cfg); err != nil {
+		return nil, fmt.Errorf("error binding config: %w", err)
+	}
+
+	return &cfg, nil
 }
 
-// Only for redis for now
-type CacheConfig struct {
-	Host string
-	Port int
+func DefaultConfig() *Config {
+	v := viper.New()
+	setupDefaults(v)
+
+	var cfg Config
+	// can it throw an error?
+	if err := v.Unmarshal(&cfg); err != nil {
+		fmt.Fprintf(os.Stderr, "viper unmarshal error: %s", err.Error())
+	}
+	return &cfg
+}
+
+func setupDefaults(v *viper.Viper) {
+	v.SetDefault("server.host", "127.0.0.1")
+	v.SetDefault("server.port", 50051)
+}
+
+func isMissingConfigFile(err error) bool {
+	if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+		return true
+	}
+	if os.IsNotExist(err) {
+		return true
+	}
+	return false
 }
