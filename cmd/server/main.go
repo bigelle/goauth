@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"os"
 	"time"
@@ -10,6 +11,7 @@ import (
 	accountv1 "github.com/bigelle/auth/gen/account/v1"
 	authv1 "github.com/bigelle/auth/gen/auth/v1"
 	"github.com/bigelle/auth/internal/cache"
+	"github.com/bigelle/auth/internal/config"
 	"github.com/bigelle/auth/internal/interceptor"
 	"github.com/bigelle/auth/internal/service"
 	"github.com/rs/zerolog"
@@ -23,7 +25,10 @@ import (
 func main() {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 
-	// TODO: read a config from yaml(?)
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		log.Fatal().Err(err).Msg("error loading config")
+	}
 
 	dsn := os.Getenv("DATABASE_URL")
 	if dsn == "" {
@@ -55,12 +60,12 @@ func main() {
 	defer c.Close()
 
 	// FIXME: don't use hardcoded options
-	log.Info().Int("port", 50051).Msg("opening socket on port")
-	listener, err := net.Listen("tcp", ":50051")
+	log.Info().Int("port", cfg.Server.Port).Msg("opening socket on port")
+	addr := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)
+	listener, err := net.Listen("tcp", addr)
 	if err != nil {
 		log.Fatal().AnErr("socket error", err).Msg("error opening tcp socket")
 	}
-	log.Info().Int("port", 50052).Msg("listening on port")
 
 	server := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
