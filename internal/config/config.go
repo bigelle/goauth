@@ -41,12 +41,23 @@ func init() {
 }
 
 type Config struct {
-	Server ServerConfig `mapstructure:"server"`
+	Server   ServerConfig   `mapstructure:"server"`
+	Database DatabaseConfig `mapstructure:"database"`
 }
 
 type ServerConfig struct {
 	Host string `mapstructure:"host"`
 	Port int    `mapstructure:"port"`
+}
+
+type DatabaseConfig struct {
+	Driver string       `mapstructure:"driver"`
+	Sqlite SqliteConfig `mapstructure:"sqlite"`
+}
+
+type SqliteConfig struct {
+	File  string `mapstructure:"file"`
+	Cache string `mapstructure:"cache"`
 }
 
 func LoadConfig(file ...string) (*Config, error) {

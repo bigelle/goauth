@@ -2,9 +2,11 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/bigelle/auth/ent"
@@ -22,6 +24,46 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+func ConnectDatabase(cfg *config.DatabaseConfig) (*ent.Client, error) {
+	dsn, err := makeDsn(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("invalid database options")
+	}
+
+	return ent.Open(cfg.Driver, dsn)
+}
+
+func makeDsn(cfg *config.DatabaseConfig) (dsn string, err error) {
+	switch cfg.Driver {
+	case "sqlite":
+		dsn = makeSqliteDsn(&cfg.Sqlite)
+	}
+
+	if dsn == "" {
+		err = fmt.Errorf("unsupported database: %s", cfg.Driver)
+	}
+
+	return dsn, err
+}
+
+func makeSqliteDsn(cfg *config.SqliteConfig) string {
+	builder := strings.Builder{}
+	builder.WriteString("file:")
+	builder.WriteString(cfg.File)
+	builder.WriteRune('?')
+
+	builder.WriteString("cache=")
+	builder.WriteString(cfg.Cache)
+
+	builder.WriteString("&_fk=1")
+
+	return builder.String()
+}
+
+func Migrate(db *ent.Client) error {
+	return db.Schema.Create(context.Background())
+}
+
 func main() {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 
@@ -30,23 +72,12 @@ func main() {
 		log.Fatal().Err(err).Msg("error loading config")
 	}
 
-	dsn := os.Getenv("DATABASE_URL")
-	if dsn == "" {
-		dsn = "file:/tmp/app.db?cache=shared&_fk=1"
-	}
-
-	// FIXME: don't use hardcoded options
-	log.Info().Msg("setting up database")
-	log.Debug().Str("driver", "sqlite3").Str("options", dsn).Msg("database options")
-
-	db, err := ent.Open("sqlite3", dsn)
-	db = db.Debug()
+	db, err := ConnectDatabase(&cfg.Database)
 	if err != nil {
-		log.Fatal().AnErr("database error", err).Msg("error opening database connection")
+		log.Fatal().Err(err).Msg("error connecting to database")
 	}
-	defer db.Close()
 
-	if err := db.Schema.Create(context.Background()); err != nil {
+	if err := Migrate(db); err != nil {
 		log.Fatal().AnErr("database error", err).Msg("failed migrating schema")
 	}
 

@@ -12,3 +12,9 @@ properties:
         type: "number"
         minimum: 1024
         maximum: 65535
+  database:
+    type: "object"
+    properties:
+      driver:
+        type: "string"
+        oneof:
