@@ -2,10 +2,8 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net"
-	"os"
 	"strings"
 	"time"
 
@@ -77,7 +75,7 @@ func main() {
 		log.Fatal().Err(err).Msg("error connecting to database")
 	}
 
-	if err := Migrate(db); err != nil {
+	if err = Migrate(db); err != nil {
 		log.Fatal().AnErr("database error", err).Msg("failed migrating schema")
 	}
 
