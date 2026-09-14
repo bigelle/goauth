@@ -2,14 +2,17 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/bigelle/auth/ent"
 	accountv1 "github.com/bigelle/auth/gen/account/v1"
 	authv1 "github.com/bigelle/auth/gen/auth/v1"
 	"github.com/bigelle/auth/internal/cache"
+	"github.com/bigelle/auth/internal/config"
 	"github.com/bigelle/auth/internal/interceptor"
 	"github.com/bigelle/auth/internal/service"
 	"github.com/rs/zerolog"
@@ -20,28 +23,61 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+func ConnectDatabase(cfg *config.DatabaseConfig) (*ent.Client, error) {
+	dsn, err := makeDsn(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("invalid database options")
+	}
+
+	return ent.Open(cfg.Driver, dsn)
+}
+
+func makeDsn(cfg *config.DatabaseConfig) (dsn string, err error) {
+	switch cfg.Driver {
+	case "sqlite3":
+		dsn = makeSqliteDsn(&cfg.Sqlite)
+	}
+
+	if dsn == "" {
+		err = fmt.Errorf("unsupported database: %s", cfg.Driver)
+	}
+	fmt.Println("dsn:", dsn)
+
+	return dsn, err
+}
+
+func makeSqliteDsn(cfg *config.SqliteConfig) string {
+	builder := strings.Builder{}
+	builder.WriteString("file:")
+	builder.WriteString(cfg.File)
+	builder.WriteRune('?')
+
+	builder.WriteString("cache=")
+	builder.WriteString(cfg.Cache)
+
+	builder.WriteString("&_fk=1")
+
+	return builder.String()
+}
+
+func Migrate(db *ent.Client) error {
+	return db.Schema.Create(context.Background())
+}
+
 func main() {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 
-	// TODO: read a config from yaml(?)
-
-	dsn := os.Getenv("DATABASE_URL")
-	if dsn == "" {
-		dsn = "file:/tmp/app.db?cache=shared&_fk=1" // текущий дефолт остаётся как есть для локального go run
-	}
-
-	// FIXME: don't use hardcoded options
-	log.Info().Msg("setting up database")
-	log.Debug().Str("driver", "sqlite3").Str("options", dsn).Msg("database options")
-
-	db, err := ent.Open("sqlite3", dsn)
-	db = db.Debug()
+	cfg, err := config.LoadConfig(os.Getenv("CONFIG_FILE_PATH"))
 	if err != nil {
-		log.Fatal().AnErr("database error", err).Msg("error opening database connection")
+		log.Fatal().Err(err).Msg("error loading config")
 	}
-	defer db.Close()
 
-	if err := db.Schema.Create(context.Background()); err != nil {
+	db, err := ConnectDatabase(&cfg.Database)
+	if err != nil {
+		log.Fatal().Err(err).Msg("error connecting to database")
+	}
+
+	if err = Migrate(db); err != nil {
 		log.Fatal().AnErr("database error", err).Msg("failed migrating schema")
 	}
 
@@ -55,12 +91,12 @@ func main() {
 	defer c.Close()
 
 	// FIXME: don't use hardcoded options
-	log.Info().Int("port", 50051).Msg("opening socket on port")
-	listener, err := net.Listen("tcp", ":50051")
+	log.Info().Int("port", cfg.Server.Port).Msg("opening socket on port")
+	addr := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)
+	listener, err := net.Listen("tcp", addr)
 	if err != nil {
 		log.Fatal().AnErr("socket error", err).Msg("error opening tcp socket")
 	}
-	log.Info().Int("port", 50052).Msg("listening on port")
 
 	server := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
