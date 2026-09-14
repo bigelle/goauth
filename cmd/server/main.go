@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"os"
 	"strings"
 	"time"
 
@@ -33,13 +34,14 @@ func ConnectDatabase(cfg *config.DatabaseConfig) (*ent.Client, error) {
 
 func makeDsn(cfg *config.DatabaseConfig) (dsn string, err error) {
 	switch cfg.Driver {
-	case "sqlite":
+	case "sqlite3":
 		dsn = makeSqliteDsn(&cfg.Sqlite)
 	}
 
 	if dsn == "" {
 		err = fmt.Errorf("unsupported database: %s", cfg.Driver)
 	}
+	fmt.Println("dsn:", dsn)
 
 	return dsn, err
 }
@@ -65,7 +67,7 @@ func Migrate(db *ent.Client) error {
 func main() {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 
-	cfg, err := config.LoadConfig()
+	cfg, err := config.LoadConfig(os.Getenv("CONFIG_FILE_PATH"))
 	if err != nil {
 		log.Fatal().Err(err).Msg("error loading config")
 	}

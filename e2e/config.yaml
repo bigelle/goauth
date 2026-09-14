@@ -1,0 +1,8 @@
+server:
+  host: ""
+  port: 50051
+database:
+  driver: "sqlite3"
+  sqlite:
+    file: "/app/data/app.db"
+    cache: "shared"

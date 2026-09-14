@@ -77,10 +77,6 @@ func LoadConfig(file ...string) (*Config, error) {
 		if !isMissingConfigFile(err) {
 			return nil, fmt.Errorf("error reading config file: %w", err)
 		}
-		if cfgFile != "" {
-			fmt.Println("using default config instead of", cfgFile)
-			fmt.Println("the error was:", err.Error())
-		}
 		return DefaultConfig(), nil
 	}
 
