@@ -11,7 +11,11 @@
       let
         pkgs = nixpkgs.legacyPackages.${system};
 
-        nativeBuildInputs = with pkgs; [ go gopls ];
+        nativeBuildInputs = with pkgs; [
+                    go
+                    gopls
+                    govulncheck
+                ];
         buildInputs = with pkgs; [ ];
       in {
         devShells.default =
